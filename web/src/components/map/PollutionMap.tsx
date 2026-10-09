@@ -1,0 +1,856 @@
+"use client";
+
+import { useEffect } from "react";
+import L from "leaflet";
+import { heatLayer } from "@linkurious/leaflet-heat";
+import {
+  CircleMarker,
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
+
+import "leaflet/dist/leaflet.css";
+
+type Station = {
+  name: string;
+  position: [number, number];
+  aqi: number;
+  pm25: number;
+};
+
+type FireHotspot = {
+  name: string;
+  position: [number, number];
+  risk: string;
+};
+
+type WindPoint = {
+  name: string;
+  position: [number, number];
+  degrees: number;
+  speed: number;
+};
+
+// Demonstration values only. Replace these with API data when available.
+const stations: Station[] = [
+  {
+    name: "Anand Vihar",
+    position: [28.6469, 77.316],
+    aqi: 225,
+    pm25: 118,
+  },
+  {
+    name: "Connaught Place",
+    position: [28.6315, 77.2167],
+    aqi: 165,
+    pm25: 72,
+  },
+  {
+    name: "Dwarka",
+    position: [28.5921, 77.046],
+    aqi: 132,
+    pm25: 54,
+  },
+  {
+    name: "Rohini",
+    position: [28.7495, 77.0565],
+    aqi: 186,
+    pm25: 83,
+  },
+  {
+    name: "Lodhi Road",
+    position: [28.5918, 77.2273],
+    aqi: 108,
+    pm25: 42,
+  },
+  {
+    name: "Punjabi Bagh",
+    position: [28.6683, 77.1318],
+    aqi: 198,
+    pm25: 91,
+  },
+  {
+    name: "ITO",
+    position: [28.6289, 77.2405],
+    aqi: 178,
+    pm25: 79,
+  },
+];
+
+const fireHotspots: FireHotspot[] = [
+  {
+    name: "Illustrative hotspot · Punjab",
+    position: [30.85, 75.85],
+    risk: "Elevated",
+  },
+  {
+    name: "Illustrative hotspot · Haryana",
+    position: [29.15, 76.45],
+    risk: "Moderate",
+  },
+  {
+    name: "Illustrative hotspot · NCR",
+    position: [28.9, 77.15],
+    risk: "Moderate",
+  },
+];
+
+const windPoints: WindPoint[] = [
+  {
+    name: "North-west Delhi",
+    position: [28.73, 77.12],
+    degrees: 135,
+    speed: 12,
+  },
+  {
+    name: "Central Delhi",
+    position: [28.65, 77.22],
+    degrees: 125,
+    speed: 10,
+  },
+  {
+    name: "South Delhi",
+    position: [28.55, 77.2],
+    degrees: 145,
+    speed: 8,
+  },
+  {
+    name: "East Delhi",
+    position: [28.62, 77.3],
+    degrees: 115,
+    speed: 9,
+  },
+];
+
+const DELHI_CENTER: [number, number] = [28.6139, 77.209];
+
+function getAqiColor(aqi: number): string {
+  if (aqi <= 50) return "#16a34a";
+  if (aqi <= 100) return "#84cc16";
+  if (aqi <= 200) return "#f59e0b";
+  if (aqi <= 300) return "#f97316";
+  if (aqi <= 400) return "#ef4444";
+  return "#991b1b";
+}
+
+function getAqiLabel(aqi: number): string {
+  if (aqi <= 50) return "Good";
+  if (aqi <= 100) return "Satisfactory";
+  if (aqi <= 200) return "Moderate";
+  if (aqi <= 300) return "Poor";
+  if (aqi <= 400) return "Very Poor";
+  return "Severe";
+}
+
+function createStationIcon(station: Station) {
+  const color = getAqiColor(station.aqi);
+
+  return L.divIcon({
+    className: "dbb-station-icon",
+    html: `
+      <div style="
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        gap:3px;
+        transform:translateY(-2px);
+      ">
+        <div style="
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          min-width:36px;
+          height:29px;
+          padding:0 5px;
+          border:2px solid white;
+          border-radius:9px;
+          background:${color};
+          color:#fff;
+          font-size:12px;
+          font-weight:800;
+          line-height:1;
+          box-shadow:0 2px 8px rgba(15,23,42,.25);
+        ">${station.aqi}</div>
+        <div style="
+          width:7px;
+          height:7px;
+          border:2px solid white;
+          border-radius:50%;
+          background:${color};
+          box-shadow:0 1px 4px rgba(15,23,42,.25);
+        "></div>
+      </div>
+    `,
+    iconSize: [44, 43],
+    iconAnchor: [22, 40],
+    popupAnchor: [0, -38],
+  });
+}
+
+function createFireIcon() {
+  return L.divIcon({
+    className: "dbb-fire-icon",
+    html: `
+      <div style="
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width:29px;
+        height:29px;
+        border:2px solid white;
+        border-radius:50%;
+        background:#dc2626;
+        color:white;
+        font-size:16px;
+        box-shadow:0 2px 8px rgba(127,29,29,.35);
+      " aria-hidden="true">🔥</div>
+    `,
+    iconSize: [29, 29],
+    iconAnchor: [14, 14],
+  });
+}
+
+function createWindIcon(degrees: number) {
+  return L.divIcon({
+    className: "dbb-wind-icon",
+    html: `
+      <div class="wind-arrow-shell">
+        <svg
+          class="wind-arrow-svg"
+          viewBox="0 0 32 32"
+          width="27"
+          height="27"
+          aria-hidden="true"
+          style="transform:rotate(${degrees}deg)"
+        >
+          <path
+            d="M16 26V6"
+            fill="none"
+            stroke="#087f8c"
+            stroke-width="3.5"
+            stroke-linecap="round"
+          />
+          <path
+            d="M7.5 14.5L16 6L24.5 14.5"
+            fill="none"
+            stroke="#087f8c"
+            stroke-width="3.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  });
+}
+
+function PollutionHeatLayer({
+  enabled,
+}: {
+  enabled: boolean;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const points: [number, number, number][] = stations.map(
+      (station) => [
+        station.position[0],
+        station.position[1],
+        Math.max(0.15, Math.min(station.aqi / 300, 1)),
+      ]
+    );
+
+    const layer = heatLayer(points, {
+      radius: 62,
+      blur: 48,
+      minOpacity: 0.2,
+      max: 1,
+      maxZoom: 12,
+      gradient: {
+        0.15: "#22c55e",
+        0.35: "#a3e635",
+        0.55: "#facc15",
+        0.75: "#f97316",
+        1: "#dc2626",
+      },
+    });
+
+    layer.addTo(map);
+
+    return () => {
+      map.removeLayer(layer);
+    };
+  }, [enabled, map]);
+
+  return null;
+}
+
+function RecenterButton() {
+  const map = useMap();
+
+  return (
+    <button
+      type="button"
+      className="dbb-recenter-button"
+      onClick={() => map.flyTo(DELHI_CENTER, 10, { duration: 0.8 })}
+      aria-label="Recenter map on Delhi"
+      title="Recenter on Delhi"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="18"
+        height="18"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="8" />
+        <circle cx="12" cy="12" r="2.5" />
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+      </svg>
+    </button>
+  );
+}
+
+function MapStyles() {
+  return (
+    <style>{`
+      .dbb-map-wrap {
+        position: relative;
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        border-radius: 14px;
+        background: #e8f0ec;
+      }
+
+      .dbb-map {
+        width: 100%;
+        height: 440px;
+        min-height: 360px;
+        z-index: 1;
+        background: #e8f0ec;
+      }
+
+      .dbb-map .leaflet-control-attribution {
+        font-size: 9px;
+      }
+
+      .dbb-map .leaflet-popup-content-wrapper {
+        border-radius: 12px;
+      }
+
+      .dbb-map .leaflet-popup-content {
+        margin: 12px 14px;
+        line-height: 1.5;
+      }
+
+      .dbb-station-icon,
+      .dbb-fire-icon,
+      .dbb-wind-icon {
+        background: transparent;
+        border: 0;
+      }
+
+      .dbb-wind-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .wind-arrow-shell {
+        display: flex;
+        width: 40px;
+        height: 40px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(8,127,140,.24);
+        border-radius: 50%;
+        background: rgba(255,255,255,.94);
+        box-shadow: 0 3px 10px rgba(15,23,42,.2);
+      }
+
+      .wind-arrow-svg {
+        display: block;
+        filter: drop-shadow(0 1px 1px rgba(255,255,255,.9));
+      }
+
+      .dbb-recenter-button {
+        position: absolute;
+        z-index: 500;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        width: 38px;
+        height: 38px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #fff;
+        color: #334155;
+        box-shadow: 0 2px 8px rgba(15,23,42,.12);
+        cursor: pointer;
+      }
+
+      .dbb-recenter-button:hover {
+        background: #f1f5f9;
+        color: #087f8c;
+      }
+
+      .dbb-map-legend {
+        position: absolute;
+        z-index: 400;
+        left: 12px;
+        bottom: 28px;
+        width: min(230px, calc(100% - 24px));
+        padding: 12px;
+        border: 1px solid rgba(226,232,240,.95);
+        border-radius: 12px;
+        background: rgba(255,255,255,.96);
+        box-shadow: 0 3px 12px rgba(15,23,42,.12);
+        pointer-events: none;
+      }
+
+      .dbb-legend-title {
+        margin-bottom: 8px;
+        color: #334155;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+      }
+
+      .dbb-legend-scale {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 3px;
+        margin-bottom: 5px;
+      }
+
+      .dbb-legend-color {
+        height: 7px;
+        border-radius: 3px;
+      }
+
+      .dbb-legend-labels {
+        display: flex;
+        justify-content: space-between;
+        color: #64748b;
+        font-size: 10px;
+      }
+
+      .dbb-map-note {
+        position: absolute;
+        z-index: 400;
+        top: 12px;
+        left: 12px;
+        max-width: calc(100% - 65px);
+        padding: 8px 10px;
+        border: 1px solid rgba(226,232,240,.9);
+        border-radius: 9px;
+        background: rgba(255,255,255,.95);
+        color: #475569;
+        font-size: 10px;
+        font-weight: 700;
+        box-shadow: 0 2px 7px rgba(15,23,42,.08);
+        pointer-events: none;
+      }
+
+      .dbb-map-note span {
+        color: #b45309;
+      }
+
+      .dbb-map-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .dbb-map-heading {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .dbb-map-heading h2 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -.02em;
+      }
+
+      .dbb-map-heading p {
+        margin: 5px 0 0;
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .dbb-map-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 9px;
+        border: 1px solid #fed7aa;
+        border-radius: 999px;
+        background: #fff7ed;
+        color: #9a3412;
+        font-size: 10px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .dbb-map-status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #f97316;
+      }
+
+      .dbb-layer-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .dbb-layer-toggle {
+        display: inline-flex;
+        min-height: 35px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 7px 11px;
+        border: 1px solid #e2e8f0;
+        border-radius: 9px;
+        background: #fff;
+        color: #475569;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .15s ease, border-color .15s ease,
+          color .15s ease;
+      }
+
+      .dbb-layer-toggle:hover {
+        border-color: #99f6e4;
+      }
+
+      .dbb-layer-toggle[aria-pressed="true"] {
+        border-color: #99f6e4;
+        background: #f0fdfa;
+        color: #0f766e;
+      }
+
+      .dbb-toggle-dot {
+        width: 8px;
+        height: 8px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+      }
+
+      .dbb-map-footnote {
+        margin: 0;
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 640px) {
+        .dbb-map {
+          height: 390px;
+          min-height: 340px;
+        }
+
+        .wind-arrow-shell {
+          width: 34px;
+          height: 34px;
+        }
+
+        .wind-arrow-svg {
+          width: 23px;
+          height: 23px;
+        }
+
+        .dbb-map-legend {
+          bottom: 24px;
+          padding: 9px;
+        }
+
+        .dbb-layer-toggle {
+          flex: 1 1 auto;
+        }
+      }
+    `}</style>
+  );
+}
+
+export default function PollutionMap() {
+  const [showHeatmap, setShowHeatmap] = useLayerState(true);
+  const [showStations, setShowStations] = useLayerState(true);
+  const [showFires, setShowFires] = useLayerState(true);
+  const [showWind, setShowWind] = useLayerState(true);
+
+  return (
+    <section className="dbb-map-panel" aria-label="Delhi pollution map">
+      <MapStyles />
+
+      <div className="dbb-map-heading">
+        <div>
+          <h2>Delhi Pollution Map</h2>
+          <p>
+            Explore sample pollution levels, wind direction and
+            illustrative fire hotspots.
+          </p>
+        </div>
+
+        <div className="dbb-map-status">
+          <span className="dbb-map-status-dot" />
+          DEMO DATA
+        </div>
+      </div>
+
+      <div className="dbb-layer-controls" aria-label="Map layers">
+        <LayerToggle
+          label="Heatmap"
+          color="#f97316"
+          enabled={showHeatmap}
+          onClick={() => setShowHeatmap((value) => !value)}
+        />
+
+        <LayerToggle
+          label="AQI Stations"
+          color="#0d9488"
+          enabled={showStations}
+          onClick={() => setShowStations((value) => !value)}
+        />
+
+        <LayerToggle
+          label="Fire Hotspots"
+          color="#dc2626"
+          enabled={showFires}
+          onClick={() => setShowFires((value) => !value)}
+        />
+
+        <LayerToggle
+          label="Wind Direction"
+          color="#087f8c"
+          enabled={showWind}
+          onClick={() => setShowWind((value) => !value)}
+        />
+      </div>
+
+      <div className="dbb-map-wrap">
+        <MapContainer
+          className="dbb-map"
+          center={DELHI_CENTER}
+          zoom={10}
+          minZoom={7}
+          maxZoom={17}
+          scrollWheelZoom
+          zoomControl
+          preferCanvas
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={19}
+          />
+
+          <PollutionHeatLayer enabled={showHeatmap} />
+
+          {showStations &&
+            stations.map((station) => (
+              <Marker
+                key={station.name}
+                position={station.position}
+                icon={createStationIcon(station)}
+              >
+                <Popup>
+                  <div style={{ minWidth: 145 }}>
+                    <strong
+                      style={{
+                        display: "block",
+                        marginBottom: 7,
+                        color: "#0f172a",
+                        fontSize: 13,
+                      }}
+                    >
+                      {station.name}
+                    </strong>
+
+                    <div style={{ marginBottom: 5 }}>
+                      AQI:{" "}
+                      <strong style={{ color: getAqiColor(station.aqi) }}>
+                        {station.aqi} · {getAqiLabel(station.aqi)}
+                      </strong>
+                    </div>
+
+                    <div>
+                      PM2.5: <strong>{station.pm25} µg/m³</strong>
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 8,
+                        color: "#b45309",
+                        fontSize: 10,
+                      }}
+                    >
+                      Illustrative reading — not live data
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+          {showFires &&
+            fireHotspots.map((fire) => (
+              <Marker
+                key={fire.name}
+                position={fire.position}
+                icon={createFireIcon()}
+              >
+                <Popup>
+                  <strong>{fire.name}</strong>
+                  <div style={{ marginTop: 5 }}>
+                    Illustrative risk: {fire.risk}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 6,
+                      color: "#b45309",
+                      fontSize: 10,
+                    }}
+                  >
+                    Not a verified active fire
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+          {showWind &&
+            windPoints.map((wind) => (
+              <Marker
+                key={wind.name}
+                position={wind.position}
+                icon={createWindIcon(wind.degrees)}
+                zIndexOffset={300}
+              >
+                <Popup>
+                  <strong>{wind.name}</strong>
+                  <div style={{ marginTop: 5 }}>
+                    Arrow bearing: {wind.degrees}°
+                  </div>
+                  <div>Illustrative speed: {wind.speed} km/h</div>
+                  <div
+                    style={{
+                      marginTop: 6,
+                      color: "#b45309",
+                      fontSize: 10,
+                    }}
+                  >
+                    Not a live wind observation
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+          <RecenterButton />
+        </MapContainer>
+
+        <div className="dbb-map-note">
+          <span>●</span> Illustrative data · Not live conditions
+        </div>
+
+        {showHeatmap && (
+          <div className="dbb-map-legend">
+            <div className="dbb-legend-title">AQI Intensity</div>
+
+            <div className="dbb-legend-scale">
+              {[
+                "#22c55e",
+                "#a3e635",
+                "#facc15",
+                "#fb923c",
+                "#ef4444",
+                "#991b1b",
+              ].map((color) => (
+                <div
+                  key={color}
+                  className="dbb-legend-color"
+                  style={{ background: color }}
+                />
+              ))}
+            </div>
+
+            <div className="dbb-legend-labels">
+              <span>Lower</span>
+              <span>Higher</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <p className="dbb-map-footnote">
+        The heatmap blends the sample station values to help demonstrate
+        the interface. It does not measure pollution between stations or
+        predict smoke movement. Wind arrows and hotspot locations are
+        illustrative, not current observations.
+      </p>
+    </section>
+  );
+}
+
+function useLayerState(initialValue: boolean) {
+  // Kept as a small wrapper so the component state stays easy to read.
+  const [value, setValue] = requireLayerState(initialValue);
+  return [value, setValue] as const;
+}
+
+function requireLayerState(initialValue: boolean) {
+  // This function is replaced by React's useState import below.
+  return [initialValue, (_value: boolean | ((previous: boolean) => boolean)) => {}] as const;
+}
+
+function LayerToggle({
+  label,
+  color,
+  enabled,
+  onClick,
+}: {
+  label: string;
+  color: string;
+  enabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="dbb-layer-toggle"
+      aria-pressed={enabled}
+      onClick={onClick}
+    >
+      <span
+        className="dbb-toggle-dot"
+        style={{ background: enabled ? color : "#cbd5e1" }}
+      />
+      {label}
+      <span aria-hidden="true">{enabled ? "✓" : "+"}</span>
+    </button>
+  );
+}
