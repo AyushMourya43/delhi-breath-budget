@@ -1,0 +1,156 @@
+{
+  "generated_at": "2026-10-09T19:30:00+05:30",
+  "is_demo": true,
+  "source": "demo",
+  "note": "Illustrative sample data, not live readings.",
+  "data_freshness": {
+    "last_updated": "2026-10-09T19:18:00+05:30",
+    "age_minutes": 12
+  },
+  "points": [
+    {
+      "id": "g1",
+      "name": "Anand Vihar",
+      "lat": 28.6469,
+      "lon": 77.3164,
+      "pm25": 214,
+      "aqi": 373,
+      "category": "Very Poor",
+      "confidence": 0.9,
+      "nearest_station_km": 1.2,
+      "is_estimated": false
+    },
+    {
+      "id": "g2",
+      "name": "Rohini",
+      "lat": 28.7324,
+      "lon": 77.1177,
+      "pm25": 176,
+      "aqi": 344,
+      "category": "Very Poor",
+      "confidence": 0.85,
+      "nearest_station_km": 2.0,
+      "is_estimated": false
+    },
+    {
+      "id": "g3",
+      "name": "Punjabi Bagh",
+      "lat": 28.6742,
+      "lon": 77.131,
+      "pm25": 163,
+      "aqi": 334,
+      "category": "Very Poor",
+      "confidence": 0.8,
+      "nearest_station_km": 2.4,
+      "is_estimated": false
+    },
+    {
+      "id": "g4",
+      "name": "ITO",
+      "lat": 28.6286,
+      "lon": 77.241,
+      "pm25": 148,
+      "aqi": 322,
+      "category": "Very Poor",
+      "confidence": 0.9,
+      "nearest_station_km": 1.0,
+      "is_estimated": false
+    },
+    {
+      "id": "g5",
+      "name": "Connaught Place",
+      "lat": 28.6315,
+      "lon": 77.2167,
+      "pm25": 139,
+      "aqi": 315,
+      "category": "Very Poor",
+      "confidence": 0.85,
+      "nearest_station_km": 1.6,
+      "is_estimated": false
+    },
+    {
+      "id": "g6",
+      "name": "RK Puram",
+      "lat": 28.5633,
+      "lon": 77.1869,
+      "pm25": 121,
+      "aqi": 302,
+      "category": "Very Poor",
+      "confidence": 0.75,
+      "nearest_station_km": 2.8,
+      "is_estimated": false
+    },
+    {
+      "id": "g7",
+      "name": "Dwarka",
+      "lat": 28.5921,
+      "lon": 77.046,
+      "pm25": 132,
+      "aqi": 310,
+      "category": "Very Poor",
+      "confidence": 0.7,
+      "nearest_station_km": 3.5,
+      "is_estimated": true
+    },
+    {
+      "id": "g8",
+      "name": "Okhla",
+      "lat": 28.5355,
+      "lon": 77.271,
+      "pm25": 158,
+      "aqi": 330,
+      "category": "Very Poor",
+      "confidence": 0.65,
+      "nearest_station_km": 4.1,
+      "is_estimated": true
+    },
+    {
+      "id": "g9",
+      "name": "Gurugram",
+      "lat": 28.4595,
+      "lon": 77.0266,
+      "pm25": 104,
+      "aqi": 247,
+      "category": "Poor",
+      "confidence": 0.55,
+      "nearest_station_km": 6.2,
+      "is_estimated": true
+    },
+    {
+      "id": "g10",
+      "name": "Noida Sector 62",
+      "lat": 28.627,
+      "lon": 77.365,
+      "pm25": 171,
+      "aqi": 340,
+      "category": "Very Poor",
+      "confidence": 0.7,
+      "nearest_station_km": 3.0,
+      "is_estimated": false
+    },
+    {
+      "id": "g11",
+      "name": "Najafgarh",
+      "lat": 28.609,
+      "lon": 76.9798,
+      "pm25": 96,
+      "aqi": 221,
+      "category": "Poor",
+      "confidence": 0.5,
+      "nearest_station_km": 7.5,
+      "is_estimated": true
+    },
+    {
+      "id": "g12",
+      "name": "Narela",
+      "lat": 28.8527,
+      "lon": 77.0929,
+      "pm25": 189,
+      "aqi": 354,
+      "category": "Very Poor",
+      "confidence": 0.6,
+      "nearest_station_km": 5.8,
+      "is_estimated": true
+    }
+  ]
+}

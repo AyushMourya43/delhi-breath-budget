@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-10-09T19:30:00+05:30",
+  "is_demo": true,
+  "source": "demo",
+  "note": "Illustrative sample data, not live readings.",
+  "direction_convention": "degrees the wind blows FROM (0 = north, 90 = east)",
+  "vectors": [
+    {
+      "lat": 28.4,
+      "lon": 76.9,
+      "speed_kmh": 9,
+      "direction_deg": 305
+    },
+    {
+      "lat": 28.4,
+      "lon": 77.15,
+      "speed_kmh": 8,
+      "direction_deg": 310
+    },
+    {
+      "lat": 28.4,
+      "lon": 77.4,
+      "speed_kmh": 7,
+      "direction_deg": 315
+    },
+    {
+      "lat": 28.65,
+      "lon": 76.9,
+      "speed_kmh": 11,
+      "direction_deg": 300
+    },
+    {
+      "lat": 28.65,
+      "lon": 77.15,
+      "speed_kmh": 10,
+      "direction_deg": 308
+    },
+    {
+      "lat": 28.65,
+      "lon": 77.4,
+      "speed_kmh": 9,
+      "direction_deg": 312
+    },
+    {
+      "lat": 28.9,
+      "lon": 76.9,
+      "speed_kmh": 13,
+      "direction_deg": 298
+    },
+    {
+      "lat": 28.9,
+      "lon": 77.15,
+      "speed_kmh": 12,
+      "direction_deg": 303
+    },
+    {
+      "lat": 28.9,
+      "lon": 77.4,
+      "speed_kmh": 11,
+      "direction_deg": 306
+    },
+    {
+      "lat": 29.7,
+      "lon": 76.4,
+      "speed_kmh": 18,
+      "direction_deg": 310
+    },
+    {
+      "lat": 30.5,
+      "lon": 75.9,
+      "speed_kmh": 16,
+      "direction_deg": 305
+    },
+    {
+      "lat": 31.3,
+      "lon": 75.1,
+      "speed_kmh": 15,
+      "direction_deg": 300
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-10-09T20:00:00+05:30",
+  "is_demo": true,
+  "source": "illustrative demo fixture",
+  "note": "Illustrative rule-based estimate only; not a live forecast.",
+  "is_estimate": true,
+  "method": "illustrative diurnal rule; live weather forecast not connected",
+  "location": {
+    "name": "Delhi",
+    "lat": 28.6139,
+    "lon": 77.209
+  },
+  "profile": {
+    "type": "adult",
+    "activity": "walk"
+  },
+  "hourly": [
+    {
+      "time": "2026-10-09T20:00:00+05:30",
+      "pm25_pred": 72.4,
+      "risk_level": "moderate",
+      "risk_score": 36,
+      "confidence": 0.54
+    },
+    {
+      "time": "2026-10-09T21:00:00+05:30",
+      "pm25_pred": 76.1,
+      "risk_level": "moderate",
+      "risk_score": 38,
+      "confidence": 0.54
+    }
+  ],
+  "best_window": {
+    "start": "2026-10-10T10:00:00+05:30",
+    "end": "2026-10-10T13:00:00+05:30",
+    "mean_pm25": 53.2,
+    "reason": "Lowest estimated three-hour PM2.5 period in this illustrative forecast."
+  }
+}

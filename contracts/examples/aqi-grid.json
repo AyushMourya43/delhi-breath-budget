@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-10-09T20:00:00+05:30",
+  "is_demo": true,
+  "source": "illustrative demo fixture",
+  "note": "Illustrative demo data only; not live conditions.",
+  "data_freshness": {
+    "last_updated": null,
+    "age_minutes": null
+  },
+  "points": [
+    {
+      "id": "demo-connaught-place",
+      "name": "Connaught Place",
+      "lat": 28.6315,
+      "lon": 77.2167,
+      "pm25": 72,
+      "aqi": 140,
+      "category": "Moderate",
+      "confidence": 0.9,
+      "nearest_station_km": 0,
+      "is_estimated": false
+    }
+  ]
+}

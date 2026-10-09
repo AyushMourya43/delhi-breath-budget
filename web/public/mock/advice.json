@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-10-09T19:30:00+05:30",
+  "is_demo": true,
+  "source": "demo",
+  "note": "Illustrative sample data, not live readings.",
+  "generated_by": "template",
+  "headline": "Plan outdoor time for tomorrow 2 PM to 5 PM",
+  "details": "Average PM2.5 across Delhi sample points is about 151 ug/m3, roughly 6.9 cigarettes a day of exposure. Smoke from 8 fire hotspots may reach Delhi in about 9 hours (estimate).",
+  "actions": [
+    "Do outdoor walks or exercise around 2 PM to 5 PM.",
+    "Wear an N95 mask if you must be outside during the evening or early morning.",
+    "Keep windows closed when PM2.5 is at its peak."
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-10-09T20:00:00+05:30",
+  "is_demo": true,
+  "source": "illustrative demo fixture",
+  "note": "Illustrative corridors only; not navigable roads or measured exposure.",
+  "origin": {
+    "name": "Connaught Place",
+    "lat": 28.6315,
+    "lon": 77.2167
+  },
+  "destination": {
+    "name": "Dwarka",
+    "lat": 28.5921,
+    "lon": 77.046
+  },
+  "mode": "bike",
+  "routes": [
+    {
+      "id": "demo-route-1",
+      "label": "Illustrative route 1",
+      "via": "Approximate straight-line corridor",
+      "duration_min": 64.6,
+      "distance_km": 17.2,
+      "avg_pm25": 67.3,
+      "cigarettes": 3.3,
+      "confidence": 0.56,
+      "rank": 1,
+      "recommended": true,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2167, 28.6315],
+          [77.131, 28.6118],
+          [77.046, 28.5921]
+        ]
+      }
+    }
+  ],
+  "recommendation": "Illustrative route 1 has the lower demo exposure estimate.",
+  "exposure_note": "Illustration only; cigarette-equivalents are not a medical measurement."
+}

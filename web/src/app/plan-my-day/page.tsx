@@ -257,22 +257,6 @@ function getPollutionLabel(pm25: number) {
 
 }
 
-function getDurationLabel(minutes: number) {
-
-  if (minutes < 60) return `${minutes} minutes`;
-
-  const hours = Math.floor(minutes / 60);
-
-  const remaining = minutes % 60;
-
-  return remaining > 0
-
-    ? `${hours} hr ${remaining} min`
-
-    : `${hours} ${hours === 1 ? "hour" : "hours"}`;
-
-}
-
 function getActivityRecommendations(
 
   activityType: ActivityType,

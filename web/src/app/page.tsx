@@ -175,7 +175,7 @@ export default function HomePage() {
         <div className="notice">
           <Activity size={18} />
           <div>
-            <strong>You're viewing a demonstration</strong>
+            <strong>You&apos;re viewing a demonstration</strong>
             <p>
               AQI readings, PM2.5 values, route scores and forecast values are
               sample data. Live data integration is not connected yet.

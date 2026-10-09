@@ -1,0 +1,79 @@
+{
+  "generated_at": "2026-10-09T19:30:00+05:30",
+  "is_demo": true,
+  "source": "demo",
+  "note": "Illustrative sample data, not live readings.",
+  "fires": [
+    {
+      "id": "f1",
+      "lat": 31.63,
+      "lon": 74.87,
+      "frp": 38.4,
+      "confidence": "high",
+      "acq_time": "2026-10-09T17:00:00+05:30"
+    },
+    {
+      "id": "f2",
+      "lat": 31.05,
+      "lon": 75.6,
+      "frp": 22.1,
+      "confidence": "nominal",
+      "acq_time": "2026-10-09T16:30:00+05:30"
+    },
+    {
+      "id": "f3",
+      "lat": 30.9,
+      "lon": 75.85,
+      "frp": 45.7,
+      "confidence": "high",
+      "acq_time": "2026-10-09T17:00:00+05:30"
+    },
+    {
+      "id": "f4",
+      "lat": 30.34,
+      "lon": 76.39,
+      "frp": 18.9,
+      "confidence": "nominal",
+      "acq_time": "2026-10-09T15:30:00+05:30"
+    },
+    {
+      "id": "f5",
+      "lat": 29.8,
+      "lon": 76.4,
+      "frp": 27.3,
+      "confidence": "high",
+      "acq_time": "2026-10-09T16:30:00+05:30"
+    },
+    {
+      "id": "f6",
+      "lat": 29.69,
+      "lon": 76.99,
+      "frp": 12.6,
+      "confidence": "low",
+      "acq_time": "2026-10-09T14:00:00+05:30"
+    },
+    {
+      "id": "f7",
+      "lat": 29.32,
+      "lon": 76.31,
+      "frp": 31.0,
+      "confidence": "nominal",
+      "acq_time": "2026-10-09T16:00:00+05:30"
+    },
+    {
+      "id": "f8",
+      "lat": 30.2,
+      "lon": 75.1,
+      "frp": 24.5,
+      "confidence": "high",
+      "acq_time": "2026-10-09T17:00:00+05:30"
+    }
+  ],
+  "smoke_risk": {
+    "fire_count": 8,
+    "hours_to_arrival": 9,
+    "confidence": "medium",
+    "level": "elevated",
+    "note": "Likelihood estimate based on wind direction and fire proximity, not a precise prediction."
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-10-09T20:00:00+05:30",
+  "is_demo": true,
+  "source": "illustrative demo fixture",
+  "note": "Template guidance; not medical advice.",
+  "generated_by": "template",
+  "headline": "Air-quality planning for an adult",
+  "details": "The supplied PM2.5 estimate is 72 µg/m³. Estimates are illustrative and are not medical advice.",
+  "actions": [
+    "Consider reducing prolonged strenuous outdoor activity when pollution is elevated."
+  ]
+}

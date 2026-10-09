@@ -1,0 +1,480 @@
+openapi: 3.1.0
+info:
+  title: Delhi Breath Budget API
+  version: 0.1.0
+  description: |
+    Shared API contract for the Delhi Breath Budget prototype.
+    Responses include is_demo and source metadata. Demo estimates must not be
+    presented as live measurements or medical advice.
+servers:
+  - url: http://localhost:8000
+paths:
+  /health:
+    get:
+      summary: Service and data freshness check
+      responses:
+        "200":
+          description: Engine is responding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /api/health:
+    get:
+      summary: Service and data freshness check
+      responses:
+        "200":
+          description: Engine is responding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /api/aqi-grid:
+    get:
+      summary: Latest PM2.5/AQI sample points
+      responses:
+        "200":
+          description: AQI points with confidence and freshness metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AQIGridResponse"
+  /api/fires:
+    get:
+      summary: Active fire points and estimated smoke risk
+      responses:
+        "200":
+          description: Fire points and smoke-risk summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FiresResponse"
+  /api/wind:
+    get:
+      summary: Wind vectors used by map overlays
+      responses:
+        "200":
+          description: Wind vector collection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WindResponse"
+  /api/routes:
+    post:
+      summary: Compare route exposure estimates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RouteRequest"
+      responses:
+        "200":
+          description: Routes ranked by estimated cigarette-equivalent exposure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutesResponse"
+        "422":
+          description: Invalid route input
+        "503":
+          description: No reliable PM2.5 estimate along the requested route
+  /api/safe-window:
+    post:
+      summary: Estimate relative exposure over the next 48 hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SafeWindowRequest"
+      responses:
+        "200":
+          description: Hourly estimate and lowest-exposure three-hour period
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafeWindowResponse"
+        "422":
+          description: Invalid location or profile
+        "503":
+          description: No reliable PM2.5 estimate near the requested location
+  /api/advice:
+    post:
+      summary: Generate template advice only from supplied computed values
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdviceRequest"
+      responses:
+        "200":
+          description: Profile-based concise advice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdviceResponse"
+        "422":
+          description: Invalid request
+components:
+  schemas:
+    ApiMeta:
+      type: object
+      required: [generated_at, is_demo, source]
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        is_demo:
+          type: boolean
+        source:
+          type: string
+        note:
+          type: string
+    HealthResponse:
+      type: object
+      required: [status, data_mode, data_freshness]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        data_mode:
+          type: string
+          enum: [demo]
+        data_freshness:
+          type: object
+          required: [last_updated, age_minutes, note]
+          properties:
+            last_updated:
+              type: [string, "null"]
+              format: date-time
+            age_minutes:
+              type: [integer, "null"]
+            note:
+              type: string
+    AQIPoint:
+      type: object
+      required:
+        [id, name, lat, lon, pm25, aqi, category, confidence, nearest_station_km, is_estimated]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        lat:
+          type: number
+        lon:
+          type: number
+        pm25:
+          type: number
+        aqi:
+          type: integer
+        category:
+          type: string
+          enum: [Good, Satisfactory, Moderate, Poor, "Very Poor", Severe]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        nearest_station_km:
+          type: number
+          minimum: 0
+        is_estimated:
+          type: boolean
+    AQIGridResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiMeta"
+        - type: object
+          required: [data_freshness, points]
+          properties:
+            data_freshness:
+              type: object
+              required: [last_updated, age_minutes]
+              properties:
+                last_updated:
+                  type: [string, "null"]
+                  format: date-time
+                age_minutes:
+                  type: [integer, "null"]
+            points:
+              type: array
+              items:
+                $ref: "#/components/schemas/AQIPoint"
+    Fire:
+      type: object
+      required: [id, lat, lon, frp, confidence, acq_time]
+      properties:
+        id:
+          type: string
+        lat:
+          type: number
+        lon:
+          type: number
+        frp:
+          type: number
+          description: Fire radiative power in MW.
+        confidence:
+          type: string
+          enum: [low, nominal, high]
+        acq_time:
+          type: string
+          format: date-time
+    SmokeRisk:
+      type: object
+      required: [fire_count, hours_to_arrival, confidence, level, note]
+      properties:
+        fire_count:
+          type: integer
+          minimum: 0
+        hours_to_arrival:
+          type: integer
+          minimum: 0
+        confidence:
+          type: string
+        level:
+          type: string
+        note:
+          type: string
+    FiresResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiMeta"
+        - type: object
+          required: [fires, smoke_risk]
+          properties:
+            fires:
+              type: array
+              items:
+                $ref: "#/components/schemas/Fire"
+            smoke_risk:
+              $ref: "#/components/schemas/SmokeRisk"
+    WindVector:
+      type: object
+      required: [lat, lon, speed_kmh, direction_deg]
+      properties:
+        lat:
+          type: number
+        lon:
+          type: number
+        speed_kmh:
+          type: number
+          minimum: 0
+        direction_deg:
+          type: number
+          minimum: 0
+          maximum: 360
+          description: Direction the wind blows FROM.
+    WindResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiMeta"
+        - type: object
+          required: [direction_convention, vectors]
+          properties:
+            direction_convention:
+              type: string
+            vectors:
+              type: array
+              items:
+                $ref: "#/components/schemas/WindVector"
+    Location:
+      type: object
+      required: [lat, lon]
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        lat:
+          type: number
+          minimum: -90
+          maximum: 90
+        lon:
+          type: number
+          minimum: -180
+          maximum: 180
+    Profile:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [adult, child, elderly, asthma, outdoor_worker]
+          default: adult
+        activity:
+          type: string
+          enum: [walk, run, bike, commute]
+          default: walk
+    RouteRequest:
+      type: object
+      required: [origin, destination]
+      properties:
+        origin:
+          $ref: "#/components/schemas/Location"
+        destination:
+          $ref: "#/components/schemas/Location"
+        mode:
+          type: string
+          enum: [walk, run, bike, commute]
+          default: commute
+    RouteOption:
+      type: object
+      required:
+        [id, label, via, duration_min, distance_km, avg_pm25, cigarettes, rank, recommended, geometry]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        via:
+          type: string
+        duration_min:
+          type: number
+          minimum: 0
+        distance_km:
+          type: number
+          minimum: 0
+        avg_pm25:
+          type: number
+          minimum: 0
+        cigarettes:
+          type: number
+          minimum: 0
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        rank:
+          type: integer
+          minimum: 1
+        recommended:
+          type: boolean
+        geometry:
+          type: object
+          required: [type, coordinates]
+          properties:
+            type:
+              type: string
+              const: LineString
+            coordinates:
+              type: array
+              items:
+                type: array
+                prefixItems:
+                  - type: number
+                  - type: number
+                minItems: 2
+                maxItems: 2
+    RoutesResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiMeta"
+        - type: object
+          required: [origin, destination, mode, routes, recommendation, exposure_note]
+          properties:
+            origin:
+              $ref: "#/components/schemas/Location"
+            destination:
+              $ref: "#/components/schemas/Location"
+            mode:
+              type: string
+              enum: [walk, run, bike, commute]
+            routes:
+              type: array
+              items:
+                $ref: "#/components/schemas/RouteOption"
+            recommendation:
+              type: string
+            exposure_note:
+              type: string
+    SafeWindowRequest:
+      type: object
+      required: [location]
+      properties:
+        location:
+          $ref: "#/components/schemas/Location"
+        profile:
+          $ref: "#/components/schemas/Profile"
+    HourlyForecast:
+      type: object
+      required: [time, pm25_pred, risk_level, risk_score, confidence]
+      properties:
+        time:
+          type: string
+          format: date-time
+        pm25_pred:
+          type: number
+          minimum: 0
+        risk_level:
+          type: string
+          enum: [low, moderate, high, very_high]
+        risk_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+    SafeWindowResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiMeta"
+        - type: object
+          required: [is_estimate, method, location, profile, hourly, best_window]
+          properties:
+            is_estimate:
+              type: boolean
+            method:
+              type: string
+            location:
+              $ref: "#/components/schemas/Location"
+            profile:
+              $ref: "#/components/schemas/Profile"
+            hourly:
+              description: Exactly 48 hourly forecast estimates.
+              type: array
+              items:
+                $ref: "#/components/schemas/HourlyForecast"
+            best_window:
+              type: object
+              required: [start, end, mean_pm25, reason]
+              properties:
+                start:
+                  type: string
+                  format: date-time
+                end:
+                  type: string
+                  format: date-time
+                mean_pm25:
+                  type: number
+                  minimum: 0
+                reason:
+                  type: string
+    AdviceResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiMeta"
+        - type: object
+          required: [generated_by, headline, details, actions]
+          properties:
+            generated_by:
+              type: string
+              enum: [template, llm]
+            headline:
+              type: string
+            details:
+              type: string
+            actions:
+              type: array
+              items:
+                type: string
+    AdviceRequest:
+      type: object
+      properties:
+        profile:
+          $ref: "#/components/schemas/Profile"
+        pm25:
+          type: number
+          minimum: 0
+        cigarettes:
+          type: number
+          minimum: 0
+        best_window:
+          type: string
+        smoke_risk:
+          type: string

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  Activity,
   ArrowDownRight,
   Clock3,
   Info,
@@ -109,9 +108,7 @@ export default function BestTimeRecommendations() {
       (item) => item.value === activity
     )!;
 
-    return SAMPLE_SLOTS.filter(
-      (slot) => selectedActivity.duration <= maxDuration
-    )
+    return SAMPLE_SLOTS.filter(() => selectedActivity.duration <= maxDuration)
       .map((slot): Recommendation => {
         const result = getRecommendationScore(
           slot,

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import L from "leaflet";
 import { heatLayer } from "@linkurious/leaflet-heat";
 import {
-  CircleMarker,
   MapContainer,
   Marker,
   Popup,
@@ -14,118 +13,14 @@ import {
 
 import "leaflet/dist/leaflet.css";
 
-type Station = {
-  name: string;
-  position: [number, number];
-  aqi: number;
-  pm25: number;
-};
-
-type FireHotspot = {
-  name: string;
-  position: [number, number];
-  risk: string;
-};
-
-type WindPoint = {
-  name: string;
-  position: [number, number];
-  degrees: number;
-  speed: number;
-};
-
-// Demonstration values only. Replace these with API data when available.
-const stations: Station[] = [
-  {
-    name: "Anand Vihar",
-    position: [28.6469, 77.316],
-    aqi: 225,
-    pm25: 118,
-  },
-  {
-    name: "Connaught Place",
-    position: [28.6315, 77.2167],
-    aqi: 165,
-    pm25: 72,
-  },
-  {
-    name: "Dwarka",
-    position: [28.5921, 77.046],
-    aqi: 132,
-    pm25: 54,
-  },
-  {
-    name: "Rohini",
-    position: [28.7495, 77.0565],
-    aqi: 186,
-    pm25: 83,
-  },
-  {
-    name: "Lodhi Road",
-    position: [28.5918, 77.2273],
-    aqi: 108,
-    pm25: 42,
-  },
-  {
-    name: "Punjabi Bagh",
-    position: [28.6683, 77.1318],
-    aqi: 198,
-    pm25: 91,
-  },
-  {
-    name: "ITO",
-    position: [28.6289, 77.2405],
-    aqi: 178,
-    pm25: 79,
-  },
-];
-
-const fireHotspots: FireHotspot[] = [
-  {
-    name: "Illustrative hotspot · Punjab",
-    position: [30.85, 75.85],
-    risk: "Elevated",
-  },
-  {
-    name: "Illustrative hotspot · Haryana",
-    position: [29.15, 76.45],
-    risk: "Moderate",
-  },
-  {
-    name: "Illustrative hotspot · NCR",
-    position: [28.9, 77.15],
-    risk: "Moderate",
-  },
-];
-
-const windPoints: WindPoint[] = [
-  {
-    name: "North-west Delhi",
-    position: [28.73, 77.12],
-    degrees: 135,
-    speed: 12,
-  },
-  {
-    name: "Central Delhi",
-    position: [28.65, 77.22],
-    degrees: 125,
-    speed: 10,
-  },
-  {
-    name: "South Delhi",
-    position: [28.55, 77.2],
-    degrees: 145,
-    speed: 8,
-  },
-  {
-    name: "East Delhi",
-    position: [28.62, 77.3],
-    degrees: 115,
-    speed: 9,
-  },
-];
+import { useAQIGrid } from "../../hooks/useAQIGrid";
+import { useApiResource } from "../../hooks/useApiResource";
+import type { AQIGridResponse, AQIPoint } from "../../types/air-quality";
+import type { FiresResponse } from "../../types/fire";
+import type { WindResponse } from "../../types/weather";
 
 const DELHI_CENTER: [number, number] = [28.6139, 77.209];
+const REFRESH_MS = 5 * 60 * 1000;
 
 function getAqiColor(aqi: number): string {
   if (aqi <= 50) return "#16a34a";
@@ -136,16 +31,7 @@ function getAqiColor(aqi: number): string {
   return "#991b1b";
 }
 
-function getAqiLabel(aqi: number): string {
-  if (aqi <= 50) return "Good";
-  if (aqi <= 100) return "Satisfactory";
-  if (aqi <= 200) return "Moderate";
-  if (aqi <= 300) return "Poor";
-  if (aqi <= 400) return "Very Poor";
-  return "Severe";
-}
-
-function createStationIcon(station: Station) {
+function createStationIcon(station: AQIPoint) {
   const color = getAqiColor(station.aqi);
 
   return L.divIcon({
@@ -251,23 +137,23 @@ function createWindIcon(degrees: number) {
 
 function PollutionHeatLayer({
   enabled,
+  points,
 }: {
   enabled: boolean;
+  points: AQIPoint[];
 }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || points.length === 0) return;
 
-    const points: [number, number, number][] = stations.map(
-      (station) => [
-        station.position[0],
-        station.position[1],
-        Math.max(0.15, Math.min(station.aqi / 300, 1)),
-      ]
-    );
+    const heatPoints: [number, number, number][] = points.map((p) => [
+      p.lat,
+      p.lon,
+      Math.max(0.15, Math.min(p.aqi / 400, 1)),
+    ]);
 
-    const layer = heatLayer(points, {
+    const layer = heatLayer(heatPoints, {
       radius: 62,
       blur: 48,
       minOpacity: 0.2,
@@ -287,7 +173,7 @@ function PollutionHeatLayer({
     return () => {
       map.removeLayer(layer);
     };
-  }, [enabled, map]);
+  }, [enabled, map, points]);
 
   return null;
 }
@@ -570,6 +456,15 @@ function MapStyles() {
         line-height: 1.6;
       }
 
+      .dbb-map-error {
+        padding: 8px 10px;
+        border: 1px solid #fecaca;
+        border-radius: 9px;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 11px;
+      }
+
       @media (max-width: 640px) {
         .dbb-map {
           height: 390px;
@@ -599,11 +494,49 @@ function MapStyles() {
   );
 }
 
+function LayerToggle({
+  label,
+  color,
+  enabled,
+  onClick,
+}: {
+  label: string;
+  color: string;
+  enabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="dbb-layer-toggle"
+      aria-pressed={enabled}
+      onClick={onClick}
+    >
+      <span
+        className="dbb-toggle-dot"
+        style={{ background: enabled ? color : "#cbd5e1" }}
+      />
+      {label}
+      <span aria-hidden="true">{enabled ? "✓" : "+"}</span>
+    </button>
+  );
+}
+
 export default function PollutionMap() {
-  const [showHeatmap, setShowHeatmap] = useLayerState(true);
-  const [showStations, setShowStations] = useLayerState(true);
-  const [showFires, setShowFires] = useLayerState(true);
-  const [showWind, setShowWind] = useLayerState(true);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [showStations, setShowStations] = useState(true);
+  const [showFires, setShowFires] = useState(true);
+  const [showWind, setShowWind] = useState(true);
+
+  const aqi = useAQIGrid<AQIGridResponse>();
+  const fireData = useApiResource<FiresResponse>("/fires", REFRESH_MS);
+  const windData = useApiResource<WindResponse>("/wind", REFRESH_MS);
+
+  const points = aqi.data?.points ?? [];
+  const fires = fireData.data?.fires ?? [];
+  const vectors = windData.data?.vectors ?? [];
+  const isDemo = aqi.data?.is_demo ?? true;
+  const loadError = aqi.error || fireData.error || windData.error;
 
   return (
     <section className="dbb-map-panel" aria-label="Delhi pollution map">
@@ -613,16 +546,19 @@ export default function PollutionMap() {
         <div>
           <h2>Delhi Pollution Map</h2>
           <p>
-            Explore sample pollution levels, wind direction and
-            illustrative fire hotspots.
+            Explore pollution levels, wind direction and fire hotspots.
           </p>
         </div>
 
-        <div className="dbb-map-status">
-          <span className="dbb-map-status-dot" />
-          DEMO DATA
-        </div>
+        {isDemo && (
+          <div className="dbb-map-status">
+            <span className="dbb-map-status-dot" />
+            DEMO DATA
+          </div>
+        )}
       </div>
+
+      {loadError && <div className="dbb-map-error">Data error: {loadError}</div>}
 
       <div className="dbb-layer-controls" aria-label="Map layers">
         <LayerToggle
@@ -671,14 +607,14 @@ export default function PollutionMap() {
             maxZoom={19}
           />
 
-          <PollutionHeatLayer enabled={showHeatmap} />
+          <PollutionHeatLayer enabled={showHeatmap} points={points} />
 
           {showStations &&
-            stations.map((station) => (
+            points.map((p) => (
               <Marker
-                key={station.name}
-                position={station.position}
-                icon={createStationIcon(station)}
+                key={p.id}
+                position={[p.lat, p.lon]}
+                icon={createStationIcon(p)}
               >
                 <Popup>
                   <div style={{ minWidth: 145 }}>
@@ -690,92 +626,107 @@ export default function PollutionMap() {
                         fontSize: 13,
                       }}
                     >
-                      {station.name}
+                      {p.name}
                     </strong>
 
                     <div style={{ marginBottom: 5 }}>
                       AQI:{" "}
-                      <strong style={{ color: getAqiColor(station.aqi) }}>
-                        {station.aqi} · {getAqiLabel(station.aqi)}
+                      <strong style={{ color: getAqiColor(p.aqi) }}>
+                        {p.aqi} · {p.category}
                       </strong>
                     </div>
 
                     <div>
-                      PM2.5: <strong>{station.pm25} µg/m³</strong>
+                      PM2.5: <strong>{p.pm25} µg/m³</strong>
                     </div>
 
-                    <div
-                      style={{
-                        marginTop: 8,
-                        color: "#b45309",
-                        fontSize: 10,
-                      }}
-                    >
-                      Illustrative reading — not live data
+                    <div style={{ marginTop: 5, fontSize: 11 }}>
+                      Confidence: {Math.round(p.confidence * 100)}%
+                      {p.is_estimated && " · estimated (nearest station is far)"}
                     </div>
+
+                    {isDemo && (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          color: "#b45309",
+                          fontSize: 10,
+                        }}
+                      >
+                        Illustrative reading — not live data
+                      </div>
+                    )}
                   </div>
                 </Popup>
               </Marker>
             ))}
 
           {showFires &&
-            fireHotspots.map((fire) => (
+            fires.map((f) => (
               <Marker
-                key={fire.name}
-                position={fire.position}
+                key={f.id}
+                position={[f.lat, f.lon]}
                 icon={createFireIcon()}
               >
                 <Popup>
-                  <strong>{fire.name}</strong>
-                  <div style={{ marginTop: 5 }}>
-                    Illustrative risk: {fire.risk}
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 6,
-                      color: "#b45309",
-                      fontSize: 10,
-                    }}
-                  >
-                    Not a verified active fire
-                  </div>
+                  <strong>Fire hotspot</strong>
+                  <div style={{ marginTop: 5 }}>FRP: {f.frp} MW</div>
+                  <div>Detection confidence: {f.confidence}</div>
+                  {isDemo && (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        color: "#b45309",
+                        fontSize: 10,
+                      }}
+                    >
+                      Not a verified active fire
+                    </div>
+                  )}
                 </Popup>
               </Marker>
             ))}
 
           {showWind &&
-            windPoints.map((wind) => (
-              <Marker
-                key={wind.name}
-                position={wind.position}
-                icon={createWindIcon(wind.degrees)}
-                zIndexOffset={300}
-              >
-                <Popup>
-                  <strong>{wind.name}</strong>
-                  <div style={{ marginTop: 5 }}>
-                    Arrow bearing: {wind.degrees}°
-                  </div>
-                  <div>Illustrative speed: {wind.speed} km/h</div>
-                  <div
-                    style={{
-                      marginTop: 6,
-                      color: "#b45309",
-                      fontSize: 10,
-                    }}
-                  >
-                    Not a live wind observation
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            vectors.map((w, i) => {
+              // JSON mein direction "FROM" hai, arrow "TOWARDS" dikhana hai.
+              const heading = (w.direction_deg + 180) % 360;
+              return (
+                <Marker
+                  key={i}
+                  position={[w.lat, w.lon]}
+                  icon={createWindIcon(heading)}
+                  zIndexOffset={300}
+                >
+                  <Popup>
+                    <strong>Wind</strong>
+                    <div style={{ marginTop: 5 }}>
+                      From {w.direction_deg}° · {w.speed_kmh} km/h
+                    </div>
+                    {isDemo && (
+                      <div
+                        style={{
+                          marginTop: 6,
+                          color: "#b45309",
+                          fontSize: 10,
+                        }}
+                      >
+                        Not a live wind observation
+                      </div>
+                    )}
+                  </Popup>
+                </Marker>
+              );
+            })}
 
           <RecenterButton />
         </MapContainer>
 
-        <div className="dbb-map-note">
-          <span>●</span> Illustrative data · Not live conditions
-        </div>
+        {isDemo && (
+          <div className="dbb-map-note">
+            <span>●</span> Illustrative data · Not live conditions
+          </div>
+        )}
 
         {showHeatmap && (
           <div className="dbb-map-legend">
@@ -807,50 +758,11 @@ export default function PollutionMap() {
       </div>
 
       <p className="dbb-map-footnote">
-        The heatmap blends the sample station values to help demonstrate
-        the interface. It does not measure pollution between stations or
-        predict smoke movement. Wind arrows and hotspot locations are
-        illustrative, not current observations.
+        The heatmap blends values from the sample points to help
+        visualise pollution levels. It does not measure pollution between
+        points or predict smoke movement. Wind arrows show the direction
+        the wind is blowing towards.
       </p>
     </section>
-  );
-}
-
-function useLayerState(initialValue: boolean) {
-  // Kept as a small wrapper so the component state stays easy to read.
-  const [value, setValue] = requireLayerState(initialValue);
-  return [value, setValue] as const;
-}
-
-function requireLayerState(initialValue: boolean) {
-  // This function is replaced by React's useState import below.
-  return [initialValue, (_value: boolean | ((previous: boolean) => boolean)) => {}] as const;
-}
-
-function LayerToggle({
-  label,
-  color,
-  enabled,
-  onClick,
-}: {
-  label: string;
-  color: string;
-  enabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="dbb-layer-toggle"
-      aria-pressed={enabled}
-      onClick={onClick}
-    >
-      <span
-        className="dbb-toggle-dot"
-        style={{ background: enabled ? color : "#cbd5e1" }}
-      />
-      {label}
-      <span aria-hidden="true">{enabled ? "✓" : "+"}</span>
-    </button>
   );
 }

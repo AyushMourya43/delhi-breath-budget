@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-10-09T20:00:00+05:30",
+  "is_demo": true,
+  "source": "illustrative demo fixture",
+  "note": "Illustrative demo data only; not a live observation.",
+  "direction_convention": "degrees the wind blows FROM; 0 is north",
+  "vectors": [
+    {
+      "lat": 28.6139,
+      "lon": 77.209,
+      "speed_kmh": 8,
+      "direction_deg": 285
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-10-09T20:00:00+05:30",
+  "is_demo": true,
+  "source": "illustrative demo fixture",
+  "note": "Illustrative demo data only; fire points are not verified.",
+  "fires": [
+    {
+      "id": "demo-fire-1",
+      "lat": 31.63,
+      "lon": 74.87,
+      "frp": 38.4,
+      "confidence": "high",
+      "acq_time": "2026-10-09T18:00:00+05:30"
+    }
+  ],
+  "smoke_risk": {
+    "fire_count": 1,
+    "hours_to_arrival": 9,
+    "confidence": "low",
+    "level": "elevated",
+    "note": "Illustrative likelihood only; not a verified smoke forecast."
+  }
+}
