@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import os
 from datetime import datetime, timedelta
-from typing import Literal
+from typing import Literal, Optional
 from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, HTTPException
@@ -110,10 +110,10 @@ class SafeWindowRequest(BaseModel):
 
 class AdviceRequest(BaseModel):
     profile: Profile = Field(default_factory=Profile)
-    pm25: float | None = Field(default=None, ge=0, le=2000)
-    cigarettes: float | None = Field(default=None, ge=0, le=1000)
-    best_window: str | None = Field(default=None, max_length=120)
-    smoke_risk: str | None = Field(default=None, max_length=40)
+    pm25: Optional[float] = Field(default=None, ge=0, le=2000)
+    cigarettes: Optional[float] = Field(default=None, ge=0, le=1000)
+    best_window: Optional[str] = Field(default=None, max_length=120)
+    smoke_risk: Optional[str] = Field(default=None, max_length=40)
 
 
 def now_ist() -> datetime:
@@ -186,261 +186,73 @@ def aqi_from_pm25(pm25: float) -> tuple[int, str]:
 @app.get("/health")
 @app.get("/api/health")
 def health() -> dict[str, object]:
-    return {
-        "status": "ok",
-        "data_mode": "demo",
-        "data_freshness": {
-            "last_updated": None,
-            "age_minutes": None,
-            "note": "Live source timestamps are not connected.",
-        },
-    }
+    from engine.app.integrations.openaq_client import health_status
+    return {"status": "ok", **health_status()}
 
 
 @app.get("/api/aqi-grid")
 def aqi_grid() -> dict[str, object]:
-    points = []
-    for station in STATIONS:
-        pm25 = float(station["pm25"])
-        aqi, category = aqi_from_pm25(pm25)
-        points.append(
-            {
-                **station,
-                "pm25": round(pm25, 1),
-                "aqi": aqi,
-                "category": category,
-                "confidence": 0.9,
-                "nearest_station_km": 0.0,
-                "is_estimated": False,
-            }
-        )
-    return {
-        **response_meta(),
-        "data_freshness": {
-            "last_updated": None,
-            "age_minutes": None,
-        },
-        "points": points,
-    }
+    # DBB_OPENAQ_V1
+    from engine.app.integrations.openaq_client import get_aqi_payload
+    def demo_factory():
+        points = []
+        for station in STATIONS:
+            pm25 = float(station["pm25"])
+            aqi, category = aqi_from_pm25(pm25)
+            points.append(
+                {
+                    **station,
+                    "pm25": round(pm25, 1),
+                    "aqi": aqi,
+                    "category": category,
+                    "confidence": 0.9,
+                    "nearest_station_km": 0.0,
+                    "is_estimated": False,
+                }
+            )
+        return {
+            **response_meta(),
+            "data_freshness": {
+                "last_updated": None,
+                "age_minutes": None,
+            },
+            "points": points,
+        }
+
+    return get_aqi_payload(demo_factory, aqi_from_pm25)
 
 
 @app.get("/api/fires")
 def fires() -> dict[str, object]:
-    generated_at = now_ist()
-    return {
-        **response_meta(),
-        "fires": [
-            {**fire, "acq_time": (generated_at - timedelta(hours=2)).isoformat()}
-            for fire in FIRE_POINTS
-        ],
-        "smoke_risk": {
-            "fire_count": len(FIRE_POINTS),
-            "hours_to_arrival": 9,
-            "confidence": "low",
-            "level": "elevated",
-            "note": (
-                "Illustrative likelihood only; this demo does not calculate "
-                "smoke transport or verify active fires."
-            ),
-        },
-    }
+    # DBB_FIRE_FORECAST_V1
+    from engine.app.integrations.firms_live import get_fires
+    return get_fires(wind)
+
 
 
 @app.get("/api/wind")
 def wind() -> dict[str, object]:
-    return {
-        **response_meta(),
-        "direction_convention": "degrees the wind blows FROM; 0 is north",
-        "vectors": WIND_POINTS,
-    }
+    # DBB_OPENMETEO_WIND_V1
+    from engine.app.integrations.openmeteo_client import get_wind_payload
+    return get_wind_payload(WIND_POINTS)
 
 
 @app.post("/api/routes")
 def routes(request: RouteRequest) -> dict[str, object]:
-    start = request.origin
-    end = request.destination
-    direct_distance = haversine_km(start.lat, start.lon, end.lat, end.lon)
-    if direct_distance < 0.1:
-        raise HTTPException(
-            status_code=422,
-            detail="Origin and destination must be at least 100 metres apart.",
-        )
-
-    d_lat = end.lat - start.lat
-    d_lon = end.lon - start.lon
-    length = math.hypot(d_lat, d_lon) or 1.0
-    perpendicular = (-d_lon / length, d_lat / length)
-    mode_speed = {"walk": 4.5, "run": 8.0, "bike": 16.0, "commute": 24.0}[
-        request.mode
-    ]
-    route_options = []
-    for index, offset in enumerate((0.0, 0.035), start=1):
-        middle_lat = (start.lat + end.lat) / 2 + perpendicular[0] * offset
-        middle_lon = (start.lon + end.lon) / 2 + perpendicular[1] * offset
-        coordinates = [
-            [start.lon, start.lat],
-            [middle_lon, middle_lat],
-            [end.lon, end.lat],
-        ]
-        segment_distances = [
-            haversine_km(*reversed(coordinates[i]), *reversed(coordinates[i + 1]))
-            for i in range(len(coordinates) - 1)
-        ]
-        distance_km = sum(segment_distances)
-        duration_min = distance_km / mode_speed * 60
-        sampled = [
-            (start.lat, start.lon),
-            (middle_lat, middle_lon),
-            (end.lat, end.lon),
-        ]
-        values = [pm25_at(lat, lon) for lat, lon in sampled]
-        if any(value[1] == 0 for value in values):
-            raise HTTPException(
-                status_code=503,
-                detail="No reliable PM2.5 estimate is available along this route.",
-            )
-        avg_pm25 = sum(value[0] for value in values) / len(values)
-        confidence = min(value[1] for value in values)
-        cigarettes = avg_pm25 / 22 * (duration_min / 60)
-        route_options.append(
-            {
-                "id": f"demo-route-{index}",
-                "label": f"Illustrative route {index}",
-                "via": "Approximate straight-line corridor",
-                "duration_min": round(duration_min, 1),
-                "distance_km": round(distance_km, 1),
-                "avg_pm25": round(avg_pm25, 1),
-                "cigarettes": round(cigarettes, 2),
-                "confidence": round(confidence, 2),
-                "rank": 0,
-                "recommended": False,
-                "geometry": {"type": "LineString", "coordinates": coordinates},
-            }
-        )
-    route_options.sort(key=lambda route: route["cigarettes"])
-    for rank, route in enumerate(route_options, start=1):
-        route["rank"] = rank
-        route["recommended"] = rank == 1
-
-    chosen = route_options[0]
-    return {
-        **response_meta(),
-        "origin": start.model_dump(),
-        "destination": end.model_dump(),
-        "mode": request.mode,
-        "routes": route_options,
-        "recommendation": (
-            f"{chosen['label']} has the lower illustrative exposure estimate "
-            f"({chosen['cigarettes']} cigarette-equivalents)."
-        ),
-        "exposure_note": (
-            "Illustration only: cigarette-equivalents = average PM2.5 × "
-            "travel hours / 22. Route geometry and route-level concentrations "
-            "are approximate, not navigable or measured. Confidence decreases "
-            "with distance from sample monitoring locations."
-        ),
-    }
+    # DBB_LIVE_ROUTES_V1
+    from engine.app.services.route_live import get_routes
+    return get_routes(request, aqi_grid)
 
 
 @app.post("/api/safe-window")
 def safe_window(request: SafeWindowRequest) -> dict[str, object]:
-    location = request.location
-    profile = request.profile
-    current = now_ist().replace(minute=0)
-    base_pm25, confidence, nearest_distance = pm25_at(location.lat, location.lon)
-    if confidence == 0:
-        raise HTTPException(
-            status_code=503,
-            detail="No reliable PM2.5 estimate is available near this location.",
-        )
-    hourly = []
-    multiplier = ACTIVITY_MULTIPLIERS[profile.activity]
-    for index in range(48):
-        timestamp = current + timedelta(hours=index)
-        hour = timestamp.hour
-        diurnal = 1.0 + 0.16 * math.cos((hour - 3) * math.pi / 12)
-        predicted = max(0.0, base_pm25 * diurnal)
-        exposure_score = min(
-            100.0,
-            round(predicted / PROFILE_THRESHOLDS[profile.type] * 50 * multiplier),
-        )
-        risk_level = (
-            "low"
-            if exposure_score < 25
-            else "moderate"
-            if exposure_score < 50
-            else "high"
-            if exposure_score < 75
-            else "very_high"
-        )
-        hourly.append(
-            {
-                "time": timestamp.isoformat(),
-                "pm25_pred": round(predicted, 1),
-                "risk_level": risk_level,
-                "risk_score": exposure_score,
-                "confidence": round(confidence * 0.6, 2),
-            }
-        )
-    window_candidates = [
-        (sum(row["pm25_pred"] for row in hourly[i : i + 3]) / 3, i)
-        for i in range(len(hourly) - 2)
-    ]
-    mean_pm25, start_index = min(window_candidates)
-    window_start = datetime.fromisoformat(hourly[start_index]["time"])
-    window_end = window_start + timedelta(hours=3)
-    reason = (
-        f"Lowest estimated three-hour PM2.5 period in this illustrative "
-        f"forecast for a {PROFILE_NAMES[profile.type]} planning to "
-        f"{profile.activity}. "
-    )
-    if nearest_distance > 15:
-        reason += "Nearby monitoring coverage is limited, so confidence is low."
-    return {
-        **response_meta(),
-        "is_estimate": True,
-        "method": "illustrative diurnal rule; live weather forecast not connected",
-        "location": location.model_dump(),
-        "profile": profile.model_dump(),
-        "hourly": hourly,
-        "best_window": {
-            "start": window_start.isoformat(),
-            "end": window_end.isoformat(),
-            "mean_pm25": round(mean_pm25, 1),
-            "reason": reason,
-        },
-    }
+    from engine.app.services.forecast_live import get_forecast
+    return get_forecast(request)
+
 
 
 @app.post("/api/advice")
 def advice(request: AdviceRequest) -> dict[str, object]:
-    profile_name = PROFILE_NAMES[request.profile.type]
-    detail_parts = []
-    if request.pm25 is not None:
-        detail_parts.append(f"The supplied PM2.5 estimate is {request.pm25:g} µg/m³.")
-    if request.cigarettes is not None:
-        detail_parts.append(
-            f"The supplied route estimate is {request.cigarettes:g} "
-            "cigarette-equivalents."
-        )
-    if request.best_window:
-        detail_parts.append(f"The supplied lower-exposure window is {request.best_window}.")
-    if request.smoke_risk:
-        detail_parts.append(f"The supplied smoke-risk level is {request.smoke_risk}.")
-    if not detail_parts:
-        detail_parts.append("No computed air-quality values were supplied.")
+    from engine.app.services.forecast_live import get_advice
+    return get_advice(request)
 
-    actions_by_profile = {
-        "adult": ["Consider reducing prolonged strenuous outdoor activity when pollution is elevated."],
-        "child": ["Consider shorter outdoor periods and indoor alternatives when pollution is elevated."],
-        "elderly": ["Consider avoiding prolonged strenuous outdoor activity when pollution is elevated."],
-        "asthma": ["Follow your clinician-provided asthma action plan; seek medical advice for symptoms."],
-        "outdoor_worker": ["Consider practical exposure-reduction measures and indoor breaks where feasible."],
-    }
-    return {
-        **response_meta(),
-        "generated_by": "template",
-        "headline": f"Air-quality planning for a {profile_name}",
-        "details": " ".join(detail_parts) + " Estimates are illustrative and are not medical advice.",
-        "actions": actions_by_profile[request.profile.type],
-    }

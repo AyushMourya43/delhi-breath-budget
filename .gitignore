@@ -17,3 +17,8 @@ node_modules/
 # OS and editor
 .DS_Store
 .vscode/
+!.env.*.example
+.venv-modern/
+backend-backups/
+advice/.telegram-state.json
+advice/.telegram-state.tmp

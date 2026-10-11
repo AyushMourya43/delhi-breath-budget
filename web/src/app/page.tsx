@@ -1,13 +1,12 @@
 "use client";
-
 import dynamic from "next/dynamic";
+import { FirePanel, ForecastPanel } from "../components/live/LivePanels";
 import { useState } from "react";
+import { useAQIGrid } from "../hooks/useAQIGrid";
+import type { AQIGridResponse } from "../types/air-quality";
 import {
   Activity,
   ArrowDownRight,
-  ArrowUpRight,
-  Clock3,
-  Flame,
   Gauge,
   MapPin,
   Menu,
@@ -15,19 +14,14 @@ import {
   Wind,
   X,
 } from "lucide-react";
-
-const PollutionMap = dynamic(
-  () => import("../components/map/PollutionMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="panel" style={{ padding: 32 }}>
-        Loading interactive Delhi map...
-      </div>
-    ),
-  }
-);
-
+const PollutionMap = dynamic(() => import("../components/map/PollutionMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="panel" style={{ padding: 32 }}>
+      Loading interactive Delhi map...
+    </div>
+  ),
+});
 const RouteComparison = dynamic(
   () => import("../components/routes/RouteComparison"),
   {
@@ -37,28 +31,8 @@ const RouteComparison = dynamic(
         Loading route planner...
       </div>
     ),
-  }
+  },
 );
-
-const stations = [
-  { name: "Anand Vihar", aqi: 225, pm25: 118 },
-  { name: "Connaught Place", aqi: 165, pm25: 72 },
-  { name: "Dwarka", aqi: 132, pm25: 54 },
-  { name: "Rohini", aqi: 186, pm25: 83 },
-  { name: "Lodhi Road", aqi: 108, pm25: 42 },
-];
-
-const hours = [
-  { label: "Now", value: 118 },
-  { label: "3 PM", value: 105 },
-  { label: "6 PM", value: 92 },
-  { label: "9 PM", value: 76 },
-  { label: "12 AM", value: 68 },
-  { label: "3 AM", value: 61 },
-  { label: "6 AM", value: 73 },
-  { label: "9 AM", value: 96 },
-];
-
 const profiles = [
   { value: "adult", label: "Healthy adult" },
   { value: "child", label: "Child" },
@@ -66,7 +40,6 @@ const profiles = [
   { value: "elderly", label: "Older adult" },
   { value: "worker", label: "Outdoor worker" },
 ];
-
 function aqiLabel(aqi: number) {
   if (aqi <= 50) return "Good";
   if (aqi <= 100) return "Satisfactory";
@@ -75,19 +48,63 @@ function aqiLabel(aqi: number) {
   if (aqi <= 400) return "Very poor";
   return "Severe";
 }
-
 export default function HomePage() {
   const [profile, setProfile] = useState("adult");
   const [activity, setActivity] = useState("commute");
-  const [selectedHour, setSelectedHour] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const currentAQI = 225;
-
-  const averagePM = Math.round(
-    stations.reduce((sum, station) => sum + station.pm25, 0) /
-      stations.length
+  const air = useAQIGrid<AQIGridResponse & { is_stale?: boolean }>();
+  const stations = (air.data?.points ?? []).filter(
+    (point) =>
+      Number.isFinite(point.pm25) &&
+      point.pm25 >= 0 &&
+      Number.isFinite(point.aqi) &&
+      point.aqi >= 0,
   );
+  const highest = stations.reduce<(typeof stations)[number] | null>(
+    (best, point) => (!best || point.aqi > best.aqi ? point : best),
+    null,
+  );
+  const currentAQI = highest?.aqi ?? null;
+  const averagePM = stations.length
+    ? stations.reduce((sum, station) => sum + station.pm25, 0) / stations.length
+    : null;
+  const isDemo = air.data?.is_demo === true;
+  const isStale = air.data?.is_stale === true;
+  const status = air.error
+    ? "Update failed"
+    : air.loading
+      ? "Loading PM2.5…"
+      : !stations.length
+        ? "No usable readings"
+        : isDemo
+          ? "Demo PM2.5"
+          : isStale
+            ? "Cached PM2.5 · stale"
+            : "Measured PM2.5";
+  const indexColor =
+    currentAQI === null
+      ? "#64748b"
+      : currentAQI <= 50
+        ? "#16a34a"
+        : currentAQI <= 100
+          ? "#65a30d"
+          : currentAQI <= 200
+            ? "#d97706"
+            : currentAQI <= 300
+              ? "#ef4444"
+              : "#991b1b";
+  const timestamp = air.data?.data_freshness?.last_updated;
+  const measuredAt =
+    timestamp && Number.isFinite(Date.parse(timestamp))
+      ? new Date(timestamp).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }) + " IST"
+      : null;
 
   const profileAdvice: Record<string, string> = {
     adult:
@@ -101,7 +118,6 @@ export default function HomePage() {
     worker:
       "Consider practical exposure-reduction measures and suitable workplace protection.",
   };
-
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -109,7 +125,6 @@ export default function HomePage() {
           <div className="brand-symbol">
             <Wind size={24} />
           </div>
-
           <div>
             <div className="brand-name">Delhi Breath Budget</div>
             <div className="brand-subtitle">
@@ -117,7 +132,6 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-
         <nav className={menuOpen ? "nav-links nav-open" : "nav-links"}>
           <a href="#overview" onClick={() => setMenuOpen(false)}>
             Overview
@@ -132,16 +146,14 @@ export default function HomePage() {
             Forecast
           </a>
           <a href="/plan-my-day" onClick={() => setMenuOpen(false)}>
-  Plan My Day
-</a>
+            Plan My Day
+          </a>
         </nav>
-
         <div className="header-location">
           <MapPin size={15} />
           <span>Delhi NCR</span>
-          <span className="demo-pill">DEMO</span>
+          <span className="demo-pill">{status}</span>
         </div>
-
         <button
           className="mobile-menu"
           aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -151,87 +163,101 @@ export default function HomePage() {
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </header>
-
       <div className="dashboard" id="overview">
         <section className="welcome-row">
           <div>
             <div className="eyebrow">
-              HACKATHON PROTOTYPE · DEMONSTRATION DATA
+              HACKATHON PROTOTYPE · PM2.5 MONITORING
             </div>
             <h1>
               Make room for <span>better air.</span>
             </h1>
-            <p>
-              Understand your exposure. Choose your route. Plan your day.
-            </p>
+            <p>Understand your exposure. Choose your route. Plan your day.</p>
           </div>
-
           <div className="data-status">
             <span className="status-dot" />
-            Illustrative data · Not live
+            {status}
           </div>
         </section>
-
         <div className="notice">
           <Activity size={18} />
           <div>
-            <strong>You&apos;re viewing a demonstration</strong>
+            <strong>{status}</strong>
             <p>
-              AQI readings, PM2.5 values, route scores and forecast values are
-              sample data. Live data integration is not connected yet.
+              {air.data?.note ??
+                "Fetching air-quality readings from the backend."}
+              {measuredAt ? ` Oldest location update: ${measuredAt}.` : ""}
+              {isStale ? " These cached readings are stale." : ""} Route
+              exposure, smoke risk and forecasts remain demonstrations.
             </p>
+            {air.error && (
+              <p role="alert">
+                Could not refresh air-quality data.
+                {air.data
+                  ? " Showing the last fetched readings; they may be outdated."
+                  : " Check that the backend is running on port 8000."}{" "}
+                <button type="button" onClick={air.refetch}>
+                  Retry
+                </button>
+              </p>
+            )}
           </div>
         </div>
-
-        <section className="metric-grid">
+        <section className="metric-grid" aria-busy={air.loading}>
           <article className="metric-card">
             <div className="metric-heading">
-              <span>Sample city AQI</span>
+              <span>Highest location PM2.5 index</span>
               <div className="metric-icon red">
                 <Gauge size={19} />
               </div>
             </div>
-
-            <div className="metric-value">{currentAQI}</div>
-
+            <div className="metric-value">{currentAQI ?? "—"}</div>
             <div className="metric-bottom">
-              <span className="status-badge red-badge">
-                {aqiLabel(currentAQI)}
+              <span
+                className="status-badge"
+                style={{ color: indexColor, background: `${indexColor}18` }}
+              >
+                {currentAQI === null ? "Unavailable" : aqiLabel(currentAQI)}
               </span>
-              <span>Illustrative reading</span>
+              <span>
+                {highest?.name ?? (air.loading ? "Loading…" : "No readings")}
+              </span>
             </div>
-
             <div className="metric-track">
               <span
-                style={{ width: "56%", background: "#ef4444" }}
+                style={{
+                  width: `${Math.min(100, (currentAQI ?? 0) / 5)}%`,
+                  background: indexColor,
+                }}
               />
             </div>
           </article>
-
           <article className="metric-card">
             <div className="metric-heading">
-              <span>Average sample PM2.5</span>
+              <span>Average hourly PM2.5</span>
               <div className="metric-icon orange">
                 <Wind size={19} />
               </div>
             </div>
-
             <div className="metric-value">
-              {averagePM}
+              {averagePM === null ? "—" : averagePM.toFixed(1)}
               <small> µg/m³</small>
             </div>
-
             <div className="metric-bottom">
-              <span>Across 5 sample stations</span>
+              <span>
+                Across {stations.length} returned locations ·{" "}
+                {isDemo ? "demo" : "hourly readings"}
+              </span>
             </div>
-
             <div className="metric-track">
               <span
-                style={{ width: "72%", background: "#f97316" }}
+                style={{
+                  width: `${Math.min(100, (averagePM ?? 0) / 2.5)}%`,
+                  background: "#f97316",
+                }}
               />
             </div>
           </article>
-
           <article className="metric-card">
             <div className="metric-heading">
               <span>Monitoring locations</span>
@@ -239,51 +265,50 @@ export default function HomePage() {
                 <MapPin size={19} />
               </div>
             </div>
-
-            <div className="metric-value">{stations.length}</div>
-
-            <div className="metric-bottom">
-              <span>Fictional sample readings</span>
+            <div className="metric-value">
+              {air.data ? stations.length : "—"}
             </div>
-
+            <div className="metric-bottom">
+              <span>
+                {air.data
+                  ? isDemo
+                    ? "Demo locations"
+                    : "Locations in this response; not all Delhi stations"
+                  : "Waiting for backend"}
+              </span>
+            </div>
             <div className="metric-track">
               <span
-                style={{ width: "65%", background: "#0d9488" }}
+                style={{
+                  width: stations.length ? "100%" : "0%",
+                  background: "#0d9488",
+                }}
               />
             </div>
           </article>
-
           <article className="metric-card">
             <div className="metric-heading">
-              <span>Lower-score route</span>
+              <span>Route exposure · prototype</span>
               <div className="metric-icon green">
                 <ArrowDownRight size={19} />
               </div>
             </div>
-
             <div className="metric-value">
-              61
-              <small> PM2.5 score</small>
+              —<small> Not connected</small>
             </div>
-
             <div className="metric-bottom">
-              <span className="positive-label">Inner City Route</span>
-              <span>Sample estimate</span>
+              <span className="positive-label">Compare routes below</span>
+              <span>Demo exposure only</span>
             </div>
-
             <div className="metric-track">
-              <span
-                style={{ width: "38%", background: "#16a34a" }}
-              />
+              <span style={{ width: "0%", background: "#16a34a" }} />
             </div>
           </article>
         </section>
-
         <section className="main-grid">
           <div id="map">
             <PollutionMap />
           </div>
-
           <aside className="side-column">
             <article className="panel profile-panel">
               <div className="panel-heading">
@@ -292,14 +317,14 @@ export default function HomePage() {
                     <ShieldCheck size={19} />
                     Personalize guidance
                   </h2>
-                  <p>Tailor suggestions to your activity</p>
+                  <p>
+                    General profile guidance · not based on current readings
+                  </p>
                 </div>
               </div>
-
               <label className="field-label" htmlFor="profile">
                 Who is this for?
               </label>
-
               <select
                 id="profile"
                 value={profile}
@@ -311,11 +336,9 @@ export default function HomePage() {
                   </option>
                 ))}
               </select>
-
               <label className="field-label" htmlFor="activity">
                 Planned activity
               </label>
-
               <select
                 id="activity"
                 value={activity}
@@ -327,167 +350,33 @@ export default function HomePage() {
                 <option value="cycle">Cycling</option>
                 <option value="work">Outdoor work</option>
               </select>
-
               <div className="profile-advice">
                 <ShieldCheck size={18} />
                 <p>{profileAdvice[profile]}</p>
               </div>
-
               <div className="selected-activity">
-                Selected activity:{" "}
-                <strong>{activity.replace("-", " ")}</strong>
+                Selected activity: <strong>{activity.replace("-", " ")}</strong>
               </div>
             </article>
-
-            <article className="panel smoke-panel">
-              <div className="panel-heading">
-                <div>
-                  <h2>
-                    <Flame size={19} />
-                    Smoke risk
-                  </h2>
-                  <p>Regional hotspot demonstration</p>
-                </div>
-
-                <span className="section-chip warning-chip">
-                  DEMO
-                </span>
-              </div>
-
-              <div className="risk-row">
-                <div>
-                  <span className="small-label">
-                    Illustrative risk level
-                  </span>
-                  <strong>Moderate</strong>
-                </div>
-
-                <span className="risk-symbol">
-                  <Flame size={22} />
-                </span>
-              </div>
-
-              <div className="risk-detail">
-                <Clock3 size={16} />
-                <span>
-                  No verified smoke-arrival forecast available.
-                </span>
-              </div>
-
-              <p className="muted-note">
-                Fire hotspots are fictional. Real smoke-risk assessment
-                requires verified fire and wind data.
-              </p>
-            </article>
+            <FirePanel />
           </aside>
         </section>
-
         <section className="lower-grid">
           <div id="routes">
             <RouteComparison />
           </div>
-
-          <article className="panel" id="forecast">
-            <div className="panel-heading">
-              <div>
-                <h2>
-                  <Activity size={19} />
-                  Exposure outlook
-                </h2>
-                <p>Sample PM2.5 trend · Select a time</p>
-              </div>
-
-              <span className="section-chip">DEMO FORECAST</span>
-            </div>
-
-            <div className="forecast-summary">
-              <div>
-                <span className="small-label">Selected period</span>
-                <strong>{hours[selectedHour].label}</strong>
-              </div>
-
-              <div>
-                <span className="small-label">Sample PM2.5</span>
-                <strong>
-                  {hours[selectedHour].value}
-                  <small> µg/m³</small>
-                </strong>
-              </div>
-            </div>
-
-            <div className="bar-chart">
-              {hours.map((hour, index) => (
-                <button
-                  className={`bar-column ${
-                    selectedHour === index ? "bar-selected" : ""
-                  }`}
-                  key={hour.label}
-                  onClick={() => setSelectedHour(index)}
-                  aria-label={`${hour.label}, sample PM2.5 ${hour.value}`}
-                  aria-pressed={selectedHour === index}
-                >
-                  <span className="bar-value">{hour.value}</span>
-
-                  <span
-                    className="bar"
-                    style={{
-                      height: `${Math.max(
-                        18,
-                        (hour.value / 130) * 135
-                      )}px`,
-                      background:
-                        hour.value > 100 ? "#ef8c67" : "#53b7a5",
-                    }}
-                  />
-
-                  <span className="bar-label">{hour.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="forecast-note">
-              <ArrowUpRight size={16} />
-              <span>
-                This is a sample trend, not a validated air-quality
-                forecast.
-              </span>
-            </div>
-          </article>
+          <ForecastPanel profile={profile} activity={activity} />
         </section>
-
-        <section className="advice-section">
-          <div className="advice-icon">
-            <ShieldCheck size={22} />
-          </div>
-
-          <div className="advice-content">
-            <span className="eyebrow">
-              PERSONALIZED GUIDANCE · DEMO
-            </span>
-
-            <h2>A little planning can help reduce exposure.</h2>
-
-            <p>
-              {profileAdvice[profile]} For your selected activity (
-              {activity}), compare conditions and consider lower-exposure
-              alternatives where practical.
-            </p>
-          </div>
-
-          <span className="advice-tag">Rule-based sample</span>
-        </section>
-
+        
         <footer className="footer">
           <div className="footer-brand">
             <Wind size={17} />
             Delhi Breath Budget
           </div>
-
           <p>
-            Environmental awareness prototype · Sample data only ·
+            Environmental awareness prototype · See each section’s data source ·
             Not medical advice
           </p>
-
           <span></span>
         </footer>
       </div>

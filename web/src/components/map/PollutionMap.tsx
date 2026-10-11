@@ -569,7 +569,7 @@ export default function PollutionMap() {
         />
 
         <LayerToggle
-          label="AQI Stations"
+          label="PM2.5 locations"
           color="#0d9488"
           enabled={showStations}
           onClick={() => setShowStations((value) => !value)}
@@ -630,7 +630,7 @@ export default function PollutionMap() {
                     </strong>
 
                     <div style={{ marginBottom: 5 }}>
-                      AQI:{" "}
+                      PM2.5 index:{" "}
                       <strong style={{ color: getAqiColor(p.aqi) }}>
                         {p.aqi} · {p.category}
                       </strong>
@@ -641,7 +641,7 @@ export default function PollutionMap() {
                     </div>
 
                     <div style={{ marginTop: 5, fontSize: 11 }}>
-                      Confidence: {Math.round(p.confidence * 100)}%
+                      {isDemo ? "Demo confidence" : "Hourly coverage"}: {Math.round(p.confidence * 100)}%
                       {p.is_estimated && " · estimated (nearest station is far)"}
                     </div>
 
@@ -672,7 +672,7 @@ export default function PollutionMap() {
                   <strong>Fire hotspot</strong>
                   <div style={{ marginTop: 5 }}>FRP: {f.frp} MW</div>
                   <div>Detection confidence: {f.confidence}</div>
-                  {isDemo && (
+                  {(fireData.data?.is_demo ?? true) && (
                     <div
                       style={{
                         marginTop: 6,
@@ -703,7 +703,7 @@ export default function PollutionMap() {
                     <div style={{ marginTop: 5 }}>
                       From {w.direction_deg}° · {w.speed_kmh} km/h
                     </div>
-                    {isDemo && (
+                    {(windData.data?.is_demo ?? true) && (
                       <div
                         style={{
                           marginTop: 6,
@@ -730,7 +730,7 @@ export default function PollutionMap() {
 
         {showHeatmap && (
           <div className="dbb-map-legend">
-            <div className="dbb-legend-title">AQI Intensity</div>
+            <div className="dbb-legend-title">PM2.5 index estimate</div>
 
             <div className="dbb-legend-scale">
               {[
@@ -758,6 +758,10 @@ export default function PollutionMap() {
       </div>
 
       <p className="dbb-map-footnote">
+        {aqi.data?.note}{" "}
+        {windData.data?.note}{" "}
+        Weather data: Open-Meteo.com.{" "}
+
         The heatmap blends values from the sample points to help
         visualise pollution levels. It does not measure pollution between
         points or predict smoke movement. Wind arrows show the direction
