@@ -167,7 +167,7 @@ export default function HomePage() {
         <section className="welcome-row">
           <div>
             <div className="eyebrow">
-              HACKATHON PROTOTYPE · PM2.5 MONITORING
+              LIVE· PM2.5 MONITORING
             </div>
             <h1>
               Make room for <span>better air.</span>
