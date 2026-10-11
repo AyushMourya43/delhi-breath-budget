@@ -1,39 +1,25 @@
 # Python
 .venv/
+.venv-modern/
 __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
 
-# Secrets
+# Secrets — applies at every folder depth
 .env
 .env.*
 !.env.example
+!.env.*.example
 
 # Node
 node_modules/
 .next/
 
+# Backups and Telegram state
+backend-backups/
+.telegram-state*
+
 # OS and editor
 .DS_Store
 .vscode/
-!.env.*.example
-.venv-modern/
-backend-backups/
-advice/.telegram-state.json
-advice/.telegram-state.tmp
-
-# Environment files at any folder depth
-.env
-.env.*
-!.env.example
-!.env.*.example
-
-# Local environments and generated files
-.venv/
-.venv-modern/
-node_modules/
-.next/
-__pycache__/
-backend-backups/
-.telegram-state*
