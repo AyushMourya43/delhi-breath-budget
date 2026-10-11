@@ -25,15 +25,15 @@ Prerequisites: Python 3.11+, Node.js 20+, and npm.
 1. Create a Python virtual environment and install the engine dependencies:
 
    ```sh
-   python3 -m venv .venv
-   . .venv/bin/activate
+   python3.10 -m venv .venv-modern
+   . .venv-modern/bin/activate
    pip install -r engine/requirements.txt
    ```
 
 2. Start the API from the repository root:
 
    ```sh
-   .venv/bin/uvicorn engine.app.main:app --reload --port 8000
+   .venv-modern/bin/uvicorn engine.app.main:app --reload --port 8000
    ```
 
    Check `http://localhost:8000/health` and browse the interactive API docs at
@@ -61,7 +61,7 @@ Prerequisites: Python 3.11+, Node.js 20+, and npm.
 From the repository root:
 
 ```sh
-./.venv/bin/pytest -q engine/tests ingest/tests advice/tests
+./.venv-modern/bin/pytest -q engine/tests ingest/tests advice/tests
 cd web && npm test && npm run lint && npm run build
 ```
 
