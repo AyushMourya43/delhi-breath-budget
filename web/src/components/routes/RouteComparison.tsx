@@ -1,5 +1,6 @@
 "use client";
-import { useState, type FormEvent } from "react";
+
+import { useEffect, useState, type FormEvent } from "react";
 import {
   MapContainer,
   Polyline,
@@ -9,7 +10,6 @@ import {
   ZoomControl,
   useMap,
 } from "react-leaflet";
-import { useEffect } from "react";
 import {
   ArrowRight,
   Clock3,
@@ -21,15 +21,16 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
+
 type Coordinates = {
   lat: number;
   lon: number;
 };
-type Place = {
+
+type Place = Coordinates & {
   name: string;
-  lat: number;
-  lon: number;
 };
+
 type ComparedRoute = {
   id: number;
   distanceKm: number;
@@ -41,6 +42,12 @@ type ComparedRoute = {
   recommended: boolean;
   geometry: [number, number][];
 };
+
+export type RouteSummary = {
+  status: "idle" | "loading" | "error" | "ready";
+  route: ComparedRoute | null;
+};
+
 type RouteResponse = {
   routes: {
     id: string;
@@ -51,12 +58,16 @@ type RouteResponse = {
     coverage_fraction: number;
     unavailable_reason: string | null;
     recommended: boolean;
-    geometry: { coordinates: [number, number][] };
+    geometry: {
+      coordinates: [number, number][];
+    };
   }[];
   recommendation: string;
   exposure_note: string;
 };
+
 const routeColors = ["#0d9488", "#f59e0b", "#8b5cf6"];
+
 async function geocodePlace(query: string): Promise<Place> {
   const params = new URLSearchParams({
     viewbox: "76.5,29.3,77.8,28.0",
@@ -66,28 +77,34 @@ async function geocodePlace(query: string): Promise<Place> {
     limit: "1",
     countrycodes: "in",
   });
+
   const response = await fetch(
     `https://nominatim.openstreetmap.org/search?${params.toString()}`,
   );
+
   if (!response.ok) {
     throw new Error("Address search is temporarily unavailable.");
   }
+
   const results = (await response.json()) as {
     display_name: string;
     lat: string;
     lon: string;
   }[];
+
   if (!results.length) {
     throw new Error(
       `We couldn't find "${query}". Try a more specific Delhi NCR address.`,
     );
   }
+
   return {
     name: results[0].display_name,
     lat: Number(results[0].lat),
     lon: Number(results[0].lon),
   };
 }
+
 async function getRoadRoutes(
   origin: Coordinates,
   destination: Coordinates,
@@ -95,54 +112,79 @@ async function getRoadRoutes(
   const base = (
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
   ).replace(/\/$/, "");
+
   const prefix = process.env.NEXT_PUBLIC_API_PREFIX ?? "/api";
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60000);
+
   try {
     const response = await fetch(`${base}${prefix}/routes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ origin, destination, mode: "commute" }),
+      body: JSON.stringify({
+        origin,
+        destination,
+        mode: "commute",
+      }),
       signal: controller.signal,
     });
+
     const data = await response.json();
-    if (!response.ok)
+
+    if (!response.ok) {
       throw new Error(
         typeof data.detail === "string"
           ? data.detail
           : "Could not calculate routes.",
       );
-    if (!Array.isArray(data.routes) || !data.routes.length)
+    }
+
+    if (!Array.isArray(data.routes) || !data.routes.length) {
       throw new Error("No routes returned.");
+    }
+
     return data as RouteResponse;
   } finally {
     clearTimeout(timer);
   }
 }
+
 function formatDuration(minutes: number) {
   const totalMinutes = Math.round(minutes);
   const hours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
-  if (hours === 0) return `${remainingMinutes} min`;
-  return `${hours} hr ${remainingMinutes} min`;
+
+  return hours === 0
+    ? `${remainingMinutes} min`
+    : `${hours} hr ${remainingMinutes} min`;
 }
+
 function formatDistance(km: number) {
   return `${km.toFixed(1)} km`;
 }
+
 function RouteMapBounds({ routes }: { routes: ComparedRoute[] }) {
   const map = useMap();
+
   useEffect(() => {
-    const allPoints = routes.flatMap((route) => route.geometry);
-    if (allPoints.length > 0) {
-      map.fitBounds(allPoints, {
+    const points = routes.flatMap((route) => route.geometry);
+
+    if (points.length) {
+      map.fitBounds(points, {
         padding: [35, 35],
         maxZoom: 13,
       });
     }
   }, [map, routes]);
+
   return null;
 }
-export default function RouteComparison() {
+
+export default function RouteComparison({
+  onSummaryChange,
+}: {
+  onSummaryChange?: (summary: RouteSummary) => void;
+}) {
   const [origin, setOrigin] = useState("Connaught Place, New Delhi");
   const [destination, setDestination] = useState("Anand Vihar, Delhi");
   const [originPlace, setOriginPlace] = useState<Place | null>(null);
@@ -154,41 +196,84 @@ export default function RouteComparison() {
   const [searched, setSearched] = useState(false);
   const [resultNote, setResultNote] = useState("");
   const [exposureNote, setExposureNote] = useState("");
+
   const selectedRoute =
     routes.find((route) => route.id === selectedRouteId) ?? routes[0];
+
+  useEffect(() => {
+    onSummaryChange?.({
+      status: loading
+        ? "loading"
+        : error
+          ? "error"
+          : selectedRoute
+            ? "ready"
+            : "idle",
+      route: loading || error ? null : selectedRoute ?? null,
+    });
+  }, [loading, error, selectedRoute, onSummaryChange]);
+
+  function clearResults() {
+    setRoutes([]);
+    setSearched(false);
+    setOriginPlace(null);
+    setDestinationPlace(null);
+    setResultNote("");
+    setExposureNote("");
+    setError("");
+  }
+
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (loading) return;
+
     if (!origin.trim() || !destination.trim()) {
       setError("Enter both a starting point and a destination.");
       return;
     }
+
+    clearResults();
     setLoading(true);
-    setError("");
-    setSearched(false);
-    setRoutes([]);
-    setOriginPlace(null);
-    setDestinationPlace(null);
+
     try {
       const start = await geocodePlace(origin.trim());
-      // Small delay between geocoding requests to be considerate
-      // of the public Nominatim service's usage limits.
+
       await new Promise((resolve) => setTimeout(resolve, 1100));
+
       const end = await geocodePlace(destination.trim());
+
       const result = await getRoadRoutes(
         { lat: start.lat, lon: start.lon },
         { lat: end.lat, lon: end.lon },
       );
-      const nextRoutes: ComparedRoute[] = result.routes.map((r) => ({
-        id: Number(r.id.split("-").pop()),
-        distanceKm: r.distance_km,
-        durationMinutes: r.duration_min,
-        exposureScore: r.avg_pm25,
-        cigarettes: r.cigarettes,
-        coverage: r.coverage_fraction,
-        reason: r.unavailable_reason,
-        recommended: r.recommended,
-        geometry: r.geometry.coordinates.map(([lon, lat]) => [lat, lon]),
+
+      const nextRoutes: ComparedRoute[] = result.routes.map((route, index) => ({
+        id: index + 1,
+        distanceKm: route.distance_km,
+        durationMinutes: route.duration_min,
+        exposureScore:
+          typeof route.avg_pm25 === "number" &&
+          Number.isFinite(route.avg_pm25) &&
+          route.avg_pm25 >= 0
+            ? route.avg_pm25
+            : null,
+        cigarettes:
+          typeof route.cigarettes === "number" &&
+          Number.isFinite(route.cigarettes) &&
+          route.cigarettes >= 0
+            ? route.cigarettes
+            : null,
+        coverage: Number.isFinite(route.coverage_fraction)
+          ? Math.max(0, Math.min(1, route.coverage_fraction))
+          : 0,
+        reason: route.unavailable_reason,
+        recommended: route.recommended,
+        geometry: route.geometry.coordinates.map(
+          ([lon, lat]): [number, number] => [lat, lon],
+        ),
       }));
+
       setResultNote(result.recommendation);
       setExposureNote(result.exposure_note);
       setOriginPlace(start);
@@ -199,13 +284,16 @@ export default function RouteComparison() {
     } catch (err) {
       setError(
         err instanceof Error
-          ? err.message
+          ? err.name === "AbortError"
+            ? "The route request timed out. Please try again."
+            : err.message
           : "Something went wrong while finding routes.",
       );
     } finally {
       setLoading(false);
     }
   }
+
   return (
     <section className="route-planner-panel">
       <header className="route-planner-header">
@@ -218,6 +306,7 @@ export default function RouteComparison() {
         </div>
         <span className="route-demo-badge">EXPERIMENTAL ESTIMATE</span>
       </header>
+
       <form className="route-search-form" onSubmit={handleSearch}>
         <div className="route-input-group">
           <label htmlFor="route-origin">Starting point</label>
@@ -226,12 +315,17 @@ export default function RouteComparison() {
             <input
               id="route-origin"
               value={origin}
-              onChange={(event) => setOrigin(event.target.value)}
+              onChange={(event) => {
+                setOrigin(event.target.value);
+                clearResults();
+              }}
               placeholder="e.g. Connaught Place, Delhi"
+              disabled={loading}
               required
             />
           </div>
         </div>
+
         <div className="route-input-group">
           <label htmlFor="route-destination">Destination</label>
           <div className="route-input-wrap">
@@ -239,12 +333,17 @@ export default function RouteComparison() {
             <input
               id="route-destination"
               value={destination}
-              onChange={(event) => setDestination(event.target.value)}
+              onChange={(event) => {
+                setDestination(event.target.value);
+                clearResults();
+              }}
               placeholder="e.g. Anand Vihar, Delhi"
+              disabled={loading}
               required
             />
           </div>
         </div>
+
         <button
           className="route-search-button"
           type="submit"
@@ -258,14 +357,17 @@ export default function RouteComparison() {
           {loading ? "Finding routes..." : "Compare routes"}
         </button>
       </form>
+
       <div className="route-service-note">
         Road routes: OSRM · Place search: OpenStreetMap Nominatim
       </div>
+
       {error && (
         <div className="route-error" role="alert">
           {error}
         </div>
       )}
+
       {searched && originPlace && destinationPlace && (
         <div className="route-endpoints">
           <div>
@@ -279,6 +381,7 @@ export default function RouteComparison() {
           </div>
         </div>
       )}
+
       {routes.length > 0 && (
         <>
           <div className="route-results-heading">
@@ -288,15 +391,17 @@ export default function RouteComparison() {
             </div>
             <span>{routes.length} found</span>
           </div>
+
           <div className="route-results-layout">
             <div className="route-results-list">
               {routes.map((route, index) => {
                 const selected = route.id === selectedRouteId;
                 const color = routeColors[index % routeColors.length];
+
                 return (
                   <button
                     type="button"
-                    key={`${route.id}-${route.distanceKm}`}
+                    key={route.id}
                     className={`route-result-card ${
                       selected ? "route-result-selected" : ""
                     }`}
@@ -316,6 +421,7 @@ export default function RouteComparison() {
                         <span className="route-selected-label">Selected</span>
                       )}
                     </div>
+
                     <div className="route-result-metrics">
                       <div>
                         <Navigation size={14} />
@@ -326,6 +432,7 @@ export default function RouteComparison() {
                         <strong>{formatDuration(route.durationMinutes)}</strong>
                       </div>
                     </div>
+
                     <div className="route-exposure-row">
                       <span>Estimated route PM2.5</span>
                       <strong>
@@ -334,10 +441,12 @@ export default function RouteComparison() {
                           : `${route.exposureScore.toFixed(1)} µg/m³`}
                       </strong>
                     </div>
+
                     <div className="route-exposure-row">
                       <span>Sampled time coverage</span>
                       <strong>{(route.coverage * 100).toFixed(1)}%</strong>
                     </div>
+
                     <div className="route-exposure-row">
                       <span>Cigarette-equivalents · illustration</span>
                       <strong>
@@ -346,7 +455,9 @@ export default function RouteComparison() {
                           : route.cigarettes.toFixed(4)}
                       </strong>
                     </div>
+
                     {route.reason && <p>{route.reason}</p>}
+
                     <div className="route-exposure-track">
                       <span
                         style={{
@@ -362,6 +473,7 @@ export default function RouteComparison() {
                 );
               })}
             </div>
+
             <div className="route-results-map">
               <MapContainer
                 center={[28.6139, 77.209]}
@@ -375,8 +487,10 @@ export default function RouteComparison() {
                   attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+
                 {routes.map((route, index) => {
                   const selected = route.id === selectedRouteId;
+
                   return (
                     <Polyline
                       key={route.id}
@@ -404,6 +518,7 @@ export default function RouteComparison() {
                     </Polyline>
                   );
                 })}
+
                 {originPlace && (
                   <CircleMarker
                     center={[originPlace.lat, originPlace.lon]}
@@ -418,6 +533,7 @@ export default function RouteComparison() {
                     <Popup>Starting point: {originPlace.name}</Popup>
                   </CircleMarker>
                 )}
+
                 {destinationPlace && (
                   <CircleMarker
                     center={[destinationPlace.lat, destinationPlace.lon]}
@@ -432,10 +548,12 @@ export default function RouteComparison() {
                     <Popup>Destination: {destinationPlace.name}</Popup>
                   </CircleMarker>
                 )}
+
                 <RouteMapBounds routes={routes} />
               </MapContainer>
             </div>
           </div>
+
           {selectedRoute && (
             <div className="route-selection-summary">
               <ShieldCheck size={19} />
@@ -452,11 +570,13 @@ export default function RouteComparison() {
               </div>
             </div>
           )}
+
           <p className="route-disclaimer">
-            {exposureNote} PM2.5: OpenAQ and original providers.{" "}
+            {exposureNote} PM2.5: OpenAQ and original providers.
           </p>
         </>
       )}
+
       {!loading && !error && routes.length === 0 && (
         <div className="route-empty-state">
           <div className="route-empty-icon">
