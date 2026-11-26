@@ -7,7 +7,6 @@ Delhi Breath Budget is a Delhi NCR air-quality planning prototype. It brings tog
 - **Website:** https://delhi-breath-budget.vercel.app
 - **Backend:** https://delhi-breath-budget-api.onrender.com
 - **API documentation:** https://delhi-breath-budget-api.onrender.com/docs
-- **Telegram demo:** https://t.me/QiraBot_bot
 
 > This is an environmental awareness prototype, not medical advice. A lower-exposure route or forecast window is not guaranteed safe. Reporting locations do not represent all of Delhi.
 
@@ -23,7 +22,6 @@ Delhi Breath Budget is a Delhi NCR air-quality planning prototype. It brings tog
 | Profile guidance | Offers general guidance for adults, children, older adults, asthma-sensitive users, and outdoor workers. |
 | Plan My Day | Builds a daily schedule from activities and durations, compares illustrative sample PM2.5 across time slots, and exports the plan as an Excel workbook. This planner uses demonstration data, not live readings. |
 | Fire and wind context | Displays NASA FIRMS detections and wind data with experimental fire/wind screening. |
-| Telegram demo | Provides pollution summaries, forecast windows, profile commands, and opt-in alerts for one paired account. |
 
 ## Technology stack
 
@@ -34,12 +32,11 @@ Delhi Breath Budget is a Delhi NCR air-quality planning prototype. It brings tog
 | Backend | Python, FastAPI, Pydantic, HTTPX, Uvicorn |
 | Data providers | OpenAQ, Open-Meteo / CAMS, NASA FIRMS |
 | Routing and place search | OSRM and OpenStreetMap Nominatim |
-| Notifications | Telegram Bot API |
 | Deployment | Vercel frontend and Docker-based Render API |
 
 ## How it works
 
-The website requests data from the FastAPI backend. The backend fetches environmental data and road routes from external providers, checks usable observations, and returns planning results with source and availability information. The Telegram process separately queries the backend and delivers replies to its paired account.
+The website requests data from the FastAPI backend. The backend fetches environmental data and road routes from external providers, checks usable observations, and returns planning results with source and availability information.
 
 The dashboard's highest-location index is not an official overall Delhi AQI. Average PM2.5 is calculated across the locations returned by the API, rather than every monitoring station in Delhi.
 
@@ -51,7 +48,7 @@ The **Plan My Day** page is a separate demonstration planner: its sample PM2.5 v
 | --- | --- |
 | `web/` | Next.js dashboard, maps, route comparison, and planning interface |
 | `engine/` | FastAPI application, provider integrations, and calculation services |
-| `advice/` | Telegram demo bot and advice-related code |
+| `advice/` | Advice and alert-related modules |
 | `ingest/` | Ingestion-related modules; not a claim of a deployed scheduled pipeline |
 | `database/` | Database definitions and migration groundwork |
 | `contracts/` | API contract and example payloads |
@@ -66,7 +63,6 @@ The **Plan My Day** page is a separate demonstration planner: its sample PM2.5 v
 - Git
 - OpenAQ API key for measured pollution data
 - NASA FIRMS map key for satellite fire data
-- Telegram bot token only if running the optional bot
 
 ### 2. Clone the repository
 
@@ -127,50 +123,6 @@ npm run dev
 Open the localhost URL printed in the terminal, normally http://localhost:3000. If Next.js chooses another port, add that exact origin to the backend's `CORS_ORIGINS` and restart the backend.
 
 `NEXT_PUBLIC_USE_MOCK=true` selects the frontend's sample data. Use `false` to connect to the API. Restart the development server after changing environment variables.
-
-## Telegram bot
-
-The current bot is a **private, single-account demo**. Opening the Telegram link does not register additional users. Website profile selections are not automatically transferred to Telegram.
-
-Add these settings to `engine/.env`:
-
-```dotenv
-TELEGRAM_BOT_TOKEN=your_bot_token
-ENGINE_API_URL=http://127.0.0.1:8000
-ALERT_PM25_THRESHOLD=120
-```
-
-Start the bot from the repository root:
-
-```bash
-./.venv-modern/bin/python advice/telegram_bot.py
-```
-
-On first launch, the terminal prints a pairing command. Send that exact command in a private chat with your bot. Existing paired accounts are remembered in `advice/.telegram-state.json`.
-
-To use the deployed backend instead:
-
-```bash
-ENGINE_API_URL=https://delhi-breath-budget-api.onrender.com ./.venv-modern/bin/python advice/telegram_bot.py
-```
-
-| Command | Purpose |
-| --- | --- |
-| `/status` | Latest available pollution summary |
-| `/window` | Forecast-based lower-exposure window |
-| `/profile adult` | Select healthy-adult profile |
-| `/profile child` | Select child profile |
-| `/profile asthma` | Select asthma-sensitive profile |
-| `/profile elderly` | Select older-adult profile |
-| `/profile outdoor_worker` | Select outdoor-worker profile |
-| `/alerts on` | Enable automatic alerts |
-| `/alerts off` | Disable automatic alerts |
-| `/testalert` | Request a labelled delivery test |
-| `/stop` | Disable alerts |
-
-The default alert threshold is 120 µg/m³. Alerts require two distinct qualifying high observations at the same location and apply a one-hour notification cooldown. These are prototype rules, not medical thresholds. A test alert verifies delivery; it does not verify the automatic threshold-triggering flow.
-
-The bot process must remain running for replies and checks. The current backend Dockerfile only launches the API. Adding a Telegram token to that API service does not launch the bot; continuous bot operation requires a separate running process and persistent state storage.
 
 ## Deployment configuration
 
@@ -238,7 +190,6 @@ For local editing, use `npm run dev`. `npm start` serves the production build an
 | Routes return 503 | Check backend logs, routing-provider connectivity, and whether a road route exists between the selected points. |
 | Route exposure shows a dash | Check measurement freshness and sampled-time coverage. Insufficient coverage intentionally withholds estimates. |
 | Local HTTPS/provider requests fail | Check the Python interpreter and SSL version; use a modern OpenSSL-backed environment. |
-| Telegram opens but does not reply | Confirm the bot process is running, the token is correct, and the account is paired. |
 | Local UI does not reflect edits | Use the development server and its printed URL; production mode requires rebuilding. |
 | Root API URL returns 404 | Open `/health` or `/docs` instead. |
 
@@ -256,15 +207,14 @@ Inspect the Python runtime with:
 - Forecasts are model outputs, and lower predicted pollution does not mean safe conditions.
 - Fire/wind screening does not establish that a detected fire caused pollution at a location.
 - Profile guidance is general; the activity selection does not currently provide a fully individualized risk model.
-- Telegram public multi-user registration and continuously hosted alert delivery remain future work.
 - A production database and scheduled ingestion pipeline are not required by the current direct-provider API flow; their presence in the repository does not mean they are deployed.
 - External-provider availability, quotas, and data freshness affect results.
 
-Planned improvements include broader data coverage, multi-user Telegram subscriptions, durable alert state, stronger end-to-end validation, and more detailed activity-aware planning.
+Planned improvements include broader data coverage, stronger end-to-end validation, and more detailed activity-aware planning.
 
 ## Secrets and data attribution
 
-Never commit real API keys, bot tokens, local environment files, or Telegram state. Keep `.env.example` files limited to placeholders. Variables prefixed with `NEXT_PUBLIC_` are exposed to browsers and must not contain secrets.
+Never commit real API keys or local environment files. Keep `.env.example` files limited to placeholders. Variables prefixed with `NEXT_PUBLIC_` are exposed to browsers and must not contain secrets.
 
 Data and mapping services include OpenAQ and its original reporting providers, Open-Meteo / CAMS, NASA FIRMS / LANCE / Earthdata, OpenStreetMap contributors, and OSRM. Retain applicable attribution and review provider terms before wider distribution.
 
