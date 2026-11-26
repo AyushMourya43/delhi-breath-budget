@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Activity, RefreshCw } from "lucide-react";
+
+import AppShell from "../../components/layout/AppShell";
 
 type HealthResponse = {
   status: string;
@@ -24,7 +27,8 @@ const IS_MOCK_MODE = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 export default function ApiStatusPage() {
   const [health, setHealth] = useState<HealthState>({ loading: true });
 
-  useEffect(() => {
+  function runCheck() {
+    setHealth({ loading: true });
     const controller = new AbortController();
 
     fetch(`${API_BASE_URL}/health`, {
@@ -48,36 +52,109 @@ export default function ApiStatusPage() {
               : "The engine health check failed.",
         });
       });
+  }
 
-    return () => controller.abort();
+  useEffect(() => {
+    runCheck();
   }, []);
 
   return (
-    <main style={{ padding: "32px", fontFamily: "Arial, sans-serif" }}>
-      <h1>API Status</h1>
-      <p>Frontend data mode: {IS_MOCK_MODE ? "Mock JSON" : "Engine API"}</p>
-      {health.loading === true ? (
-        <p>Checking engine health...</p>
-      ) : "error" in health ? (
-        <p role="status">
-          Engine: <strong>Unavailable</strong> — {health.error}
-        </p>
-      ) : (
-        <>
-          <p role="status">
-            Engine: <strong>{health.data.status}</strong> (
-            {health.data.data_mode} mode)
+    <AppShell
+      pageTitle="API status"
+      pageEyebrow="System · Diagnostics"
+      headerStatus={
+        <span className="dbb-header-chip">
+          <Activity size={13} />
+          {IS_MOCK_MODE ? "Mock JSON mode" : "Engine API mode"}
+        </span>
+      }
+    >
+      <div className="dbb-panel" style={{ maxWidth: 720 }}>
+        <div className="dbb-panel-head">
+          <div>
+            <h2>
+              <Activity size={18} />
+              Backend health
+            </h2>
+            <p>
+              Frontend data mode:{" "}
+              <strong>{IS_MOCK_MODE ? "Mock JSON" : "Engine API"}</strong>. Base
+              URL: <code>{API_BASE_URL}</code>.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="dbb-retry-btn"
+            onClick={runCheck}
+            disabled={health.loading}
+            style={{ opacity: health.loading ? 0.5 : 1 }}
+          >
+            <RefreshCw size={14} className={health.loading ? "route-spinner" : ""} />
+            Re-check
+          </button>
+        </div>
+
+        {health.loading && (
+          <p role="status" style={{ color: "var(--text-secondary)" }}>
+            Checking engine health…
           </p>
-          <p>
-            Source data freshness:{" "}
-            <strong>
-              {health.data.data_freshness.last_updated
-                ? `${health.data.data_freshness.age_minutes ?? "Unknown"} minutes`
-                : "Not connected"}
-            </strong>
-          </p>
-        </>
-      )}
-    </main>
+        )}
+
+        {"error" in health && (
+          <div
+            className="dbb-error"
+            role="alert"
+            style={{ marginTop: 12 }}
+          >
+            <div className="dbb-error-icon">!</div>
+            <div className="dbb-error-title">Engine unavailable</div>
+            <div className="dbb-error-text">{health.error}</div>
+            <button
+              type="button"
+              className="dbb-retry-btn"
+              onClick={runCheck}
+            >
+              <RefreshCw size={14} /> Try again
+            </button>
+          </div>
+        )}
+
+        {"data" in health && (
+          <div className="dbb-col" style={{ gap: 10, marginTop: 8 }}>
+            <div className="dbb-row-between">
+              <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>
+                Status
+              </span>
+              <strong style={{ color: "var(--accent)", fontSize: 13 }}>
+                {health.data.status}
+              </strong>
+            </div>
+            <div className="dbb-row-between">
+              <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>
+                Mode
+              </span>
+              <strong style={{ color: "var(--text)", fontSize: 13 }}>
+                {health.data.data_mode}
+              </strong>
+            </div>
+            <div className="dbb-row-between">
+              <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>
+                Last updated
+              </span>
+              <strong style={{ color: "var(--text)", fontSize: 13 }}>
+                {health.data.data_freshness.last_updated
+                  ? `${health.data.data_freshness.age_minutes ?? "Unknown"} minutes ago`
+                  : "Not connected"}
+              </strong>
+            </div>
+            {health.data.data_freshness.note && (
+              <p className="muted-note" style={{ margin: 0 }}>
+                {health.data.data_freshness.note}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }
