@@ -2021,6 +2021,41 @@ a:hover {
   .route-selection-summary { margin: 12px 14px 0; }
 }
 
+/* Keep the AQI ring constrained to its card at narrow dashboard widths. */
+.metric-grid > .metric-card:first-child {
+  min-width: 0;
+}
+
+.dbb-gauge-wrap {
+  width: 100%;
+  min-width: 0;
+  padding-right: 0;
+  padding-left: 0;
+  overflow: hidden;
+}
+
+.dbb-gauge {
+  width: min(280px, 100%);
+  max-width: 100%;
+  flex: 0 1 280px;
+}
+
+.dbb-gauge-svg {
+  display: block;
+  max-width: 100%;
+}
+
+.dbb-gauge-meta,
+.dbb-gauge-meta > span {
+  max-width: 100%;
+}
+
+.dbb-gauge-meta > span {
+  flex-wrap: wrap;
+  justify-content: center;
+  overflow-wrap: anywhere;
+}
+
 /* ============================================================
    PLAN MY DAY — minimal dark overrides (page has its own CSS)
    ============================================================ */

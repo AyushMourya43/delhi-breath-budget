@@ -13,6 +13,7 @@ import {
 import {
   ArrowRight,
   Clock3,
+  FlaskConical,
   LoaderCircle,
   MapPin,
   Navigation,
@@ -21,6 +22,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
+
+import { routeDemoSet } from "../../data/demo/routes";
 
 type Coordinates = {
   lat: number;
@@ -66,7 +69,11 @@ type RouteResponse = {
   exposure_note: string;
 };
 
-const routeColors = ["#0d9488", "#f59e0b", "#8b5cf6"];
+// Lime accent for the recommended route, muted for alternates.
+const routeColors = ["#B7F36B", "#FACC15", "#9BA59D"];
+const DARK_TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const DARK_TILE_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 async function geocodePlace(query: string): Promise<Place> {
   const params = new URLSearchParams({
@@ -109,6 +116,7 @@ async function getRoadRoutes(
   origin: Coordinates,
   destination: Coordinates,
 ): Promise<RouteResponse> {
+  // Preserved POST /routes contract — body and response shape unchanged.
   const base = (
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
   ).replace(/\/$/, "");
@@ -180,6 +188,45 @@ function RouteMapBounds({ routes }: { routes: ComparedRoute[] }) {
   return null;
 }
 
+// Animated reveal: opacity/weight grows over ~1.2s when a fresh set of routes
+// is rendered. Uses state + a small timer so each route animates independently.
+function AnimatedPolyline({
+  positions,
+  color,
+  selected,
+  onClick,
+  children,
+}: {
+  positions: [number, number][];
+  color: string;
+  selected: boolean;
+  onClick: () => void;
+  children?: React.ReactNode;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    setRevealed(false);
+    const id = window.setTimeout(() => setRevealed(true), 60);
+    return () => window.clearTimeout(id);
+  }, [positions.length]);
+
+  return (
+    <Polyline
+      positions={positions}
+      pathOptions={{
+        color,
+        weight: selected ? 6 : 4,
+        opacity: revealed ? (selected ? 0.95 : 0.55) : 0,
+        lineCap: "round",
+        lineJoin: "round",
+      }}
+      eventHandlers={{ click: onClick }}
+    >
+      {children}
+    </Polyline>
+  );
+}
+
 export default function RouteComparison({
   onSummaryChange,
 }: {
@@ -196,6 +243,7 @@ export default function RouteComparison({
   const [searched, setSearched] = useState(false);
   const [resultNote, setResultNote] = useState("");
   const [exposureNote, setExposureNote] = useState("");
+  const [isDemoData, setIsDemoData] = useState(false);
 
   const selectedRoute =
     routes.find((route) => route.id === selectedRouteId) ?? routes[0];
@@ -221,13 +269,46 @@ export default function RouteComparison({
     setResultNote("");
     setExposureNote("");
     setError("");
+    setIsDemoData(false);
+  }
+
+  function loadDemoRoutes() {
+    clearResults();
+    setLoading(true);
+    // Simulate a brief fetch delay so the loading state is visible.
+    window.setTimeout(() => {
+      const nextRoutes: ComparedRoute[] = routeDemoSet.routes.map((r) => ({
+        id: r.id,
+        distanceKm: r.distanceKm,
+        durationMinutes: r.durationMinutes,
+        exposureScore: r.exposureScore,
+        cigarettes: r.cigarettes,
+        coverage: r.coverage,
+        reason: r.reason,
+        recommended: r.recommended,
+        geometry: r.geometry,
+      }));
+      setRoutes(nextRoutes);
+      setSelectedRouteId(nextRoutes[0].id);
+      setResultNote(routeDemoSet.recommendation);
+      setExposureNote(routeDemoSet.exposureNote);
+      setOriginPlace({
+        name: routeDemoSet.originName,
+        ...routeDemoSet.origin,
+      });
+      setDestinationPlace({
+        name: routeDemoSet.destinationName,
+        ...routeDemoSet.destination,
+      });
+      setSearched(true);
+      setIsDemoData(true);
+      setLoading(false);
+    }, 700);
   }
 
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (loading) return;
-
     if (!origin.trim() || !destination.trim()) {
       setError("Enter both a starting point and a destination.");
       return;
@@ -238,9 +319,7 @@ export default function RouteComparison({
 
     try {
       const start = await geocodePlace(origin.trim());
-
       await new Promise((resolve) => setTimeout(resolve, 1100));
-
       const end = await geocodePlace(destination.trim());
 
       const result = await getRoadRoutes(
@@ -295,7 +374,7 @@ export default function RouteComparison({
   }
 
   return (
-    <section className="route-planner-panel">
+    <section className="route-planner-panel" aria-label="Pollution-aware route planner">
       <header className="route-planner-header">
         <div>
           <h2>
@@ -354,12 +433,31 @@ export default function RouteComparison({
           ) : (
             <Search size={17} />
           )}
-          {loading ? "Finding routes..." : "Compare routes"}
+          {loading ? "Finding routes…" : "Compare routes"}
         </button>
       </form>
 
       <div className="route-service-note">
-        Road routes: OSRM · Place search: OpenStreetMap Nominatim
+        Road routes: OSRM · Place search: OpenStreetMap Nominatim.{" "}
+        <button
+          type="button"
+          onClick={loadDemoRoutes}
+          disabled={loading}
+          style={{
+            marginLeft: 6,
+            color: "var(--accent)",
+            background: "none",
+            border: 0,
+            padding: 0,
+            fontSize: 11,
+            fontWeight: 600,
+            textDecoration: "underline",
+            cursor: loading ? "not-allowed" : "pointer",
+          }}
+        >
+          Load demo routes
+        </button>{" "}
+        — clearly labelled DEMO.
       </div>
 
       {error && (
@@ -379,6 +477,11 @@ export default function RouteComparison({
             <span>TO</span>
             <strong>{destinationPlace.name}</strong>
           </div>
+          {isDemoData && (
+            <span className="dbb-demo-badge" style={{ marginLeft: "auto" }}>
+              <FlaskConical size={10} /> DEMO ROUTES
+            </span>
+          )}
         </div>
       )}
 
@@ -402,16 +505,17 @@ export default function RouteComparison({
                   <button
                     type="button"
                     key={route.id}
-                    className={`route-result-card ${
+                    className={`route-result-card dbb-fade-in ${
                       selected ? "route-result-selected" : ""
                     }`}
                     onClick={() => setSelectedRouteId(route.id)}
                     aria-pressed={selected}
+                    style={{ animationDelay: `${index * 80}ms` }}
                   >
                     <div className="route-result-top">
                       <span
                         className="route-color-indicator"
-                        style={{ backgroundColor: color }}
+                        style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}88` }}
                       />
                       <strong>
                         Route {route.id}
@@ -420,6 +524,16 @@ export default function RouteComparison({
                       {selected && (
                         <span className="route-selected-label">Selected</span>
                       )}
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "var(--text-secondary)",
+                        marginTop: -2,
+                      }}
+                    >
+                      {route.reason ?? `via route ${route.id}`}
                     </div>
 
                     <div className="route-result-metrics">
@@ -456,8 +570,6 @@ export default function RouteComparison({
                       </strong>
                     </div>
 
-                    {route.reason && <p>{route.reason}</p>}
-
                     <div className="route-exposure-track">
                       <span
                         style={{
@@ -484,25 +596,21 @@ export default function RouteComparison({
               >
                 <ZoomControl position="topright" />
                 <TileLayer
-                  attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution={DARK_TILE_ATTR}
+                  url={DARK_TILE_URL}
+                  subdomains="abcd"
                 />
 
                 {routes.map((route, index) => {
                   const selected = route.id === selectedRouteId;
-
+                  const color = routeColors[index % routeColors.length];
                   return (
-                    <Polyline
+                    <AnimatedPolyline
                       key={route.id}
                       positions={route.geometry}
-                      pathOptions={{
-                        color: routeColors[index % routeColors.length],
-                        weight: selected ? 6 : 3,
-                        opacity: selected ? 0.95 : 0.4,
-                      }}
-                      eventHandlers={{
-                        click: () => setSelectedRouteId(route.id),
-                      }}
+                      color={color}
+                      selected={selected}
+                      onClick={() => setSelectedRouteId(route.id)}
                     >
                       <Popup>
                         <strong>
@@ -514,19 +622,27 @@ export default function RouteComparison({
                         <br />
                         Estimated driving time:{" "}
                         {formatDuration(route.durationMinutes)}
+                        {isDemoData && (
+                          <>
+                            <br />
+                            <span style={{ color: "#B7F36B", fontSize: 10, fontWeight: 600 }}>
+                              ● DEMO route
+                            </span>
+                          </>
+                        )}
                       </Popup>
-                    </Polyline>
+                    </AnimatedPolyline>
                   );
                 })}
 
                 {originPlace && (
                   <CircleMarker
                     center={[originPlace.lat, originPlace.lon]}
-                    radius={7}
+                    radius={8}
                     pathOptions={{
-                      color: "#ffffff",
-                      weight: 2,
-                      fillColor: "#2563eb",
+                      color: "#101312",
+                      weight: 3,
+                      fillColor: "#B7F36B",
                       fillOpacity: 1,
                     }}
                   >
@@ -537,11 +653,11 @@ export default function RouteComparison({
                 {destinationPlace && (
                   <CircleMarker
                     center={[destinationPlace.lat, destinationPlace.lon]}
-                    radius={7}
+                    radius={8}
                     pathOptions={{
-                      color: "#ffffff",
-                      weight: 2,
-                      fillColor: "#dc2626",
+                      color: "#101312",
+                      weight: 3,
+                      fillColor: "#EF4444",
                       fillOpacity: 1,
                     }}
                   >
@@ -558,7 +674,10 @@ export default function RouteComparison({
             <div className="route-selection-summary">
               <ShieldCheck size={19} />
               <div>
-                <strong>Route {selectedRoute.id} selected</strong>
+                <strong>
+                  Route {selectedRoute.id} selected
+                  {isDemoData && " · DEMO"}
+                </strong>
                 <p>
                   {formatDistance(selectedRoute.distanceKm)} ·{" "}
                   {formatDuration(selectedRoute.durationMinutes)} · Estimated

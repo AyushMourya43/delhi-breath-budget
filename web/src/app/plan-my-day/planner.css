@@ -1669,3 +1669,286 @@
     padding-top: 18px;
   }
 }
+
+/* Match Plan My Day to the dashboard's dark environmental-intelligence theme. */
+.planner-page {
+  --planner-ink: var(--text);
+  --planner-muted: var(--text-secondary);
+  --planner-teal: var(--accent);
+  --planner-teal-dark: var(--accent);
+  --planner-border: var(--border);
+  --planner-surface: var(--surface);
+  background:
+    radial-gradient(ellipse 75% 35% at 50% 0%, rgba(183, 243, 107, 0.045), transparent 70%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.planner-topbar {
+  background: rgba(22, 27, 24, 0.88);
+  border-color: var(--border);
+  backdrop-filter: blur(14px);
+}
+
+.planner-brand-icon {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+}
+
+.planner-brand small,
+.planner-back-link,
+.planner-footer {
+  color: var(--text-secondary);
+}
+
+.planner-back-link {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.planner-back-link:hover {
+  color: var(--accent);
+  background: var(--surface-2);
+  border-color: var(--accent-line);
+}
+
+.planner-eyebrow {
+  color: var(--accent);
+}
+
+.planner-hero h1,
+.planner-section-heading h2,
+.planner-stat > strong,
+.planner-summary-content h2,
+.planner-empty-state h3 {
+  color: var(--text);
+}
+
+.planner-hero h1 span {
+  color: var(--accent);
+}
+
+.planner-status {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.planner-notice {
+  color: #f3c66e;
+  background: rgba(245, 158, 11, 0.075);
+  border-color: rgba(245, 158, 11, 0.22);
+}
+
+.planner-notice p {
+  color: var(--text-secondary);
+}
+
+.planner-stat,
+.planner-card,
+.planner-summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.planner-stat,
+.planner-card,
+.planner-summary {
+  border-radius: var(--radius-lg);
+}
+
+.teal-icon,
+.green-icon,
+.planner-heading-icon,
+.planner-empty-icon,
+.planner-summary-icon {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.orange-icon {
+  color: #f6b85f;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.planner-stat-label,
+.planner-stat > small,
+.planner-section-heading p,
+.planner-field-hint,
+.planner-selected-reading span,
+.planner-guidance p,
+.suggestion-content > span,
+.suggestion-value small,
+.suggestion-explanation p,
+.planner-empty-state p,
+.daily-activity-details span,
+.planner-summary-content > p,
+.planner-export-row p {
+  color: var(--text-secondary);
+}
+
+.planner-form label,
+.planner-profile-section > label {
+  color: var(--text-secondary);
+}
+
+.planner-form select,
+.planner-form input,
+.planner-profile-section select {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.planner-form select:focus,
+.planner-form input:focus,
+.planner-profile-section select:focus {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.planner-selected-reading,
+.planner-guidance,
+.suggestion-explanation,
+.planner-recommendation-summary,
+.planner-selected-recommendation {
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.planner-selected-reading strong,
+.suggestion-content > strong,
+.suggestion-value strong,
+.daily-activity-details strong,
+.planner-export-row strong {
+  color: var(--text);
+}
+
+.planner-primary-button,
+.suggestion-select {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.planner-primary-button:hover,
+.suggestion-select:hover {
+  color: var(--bg);
+  background: #c7f88e;
+  border-color: #c7f88e;
+}
+
+.planner-action-notice {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.planner-profile-section {
+  border-color: var(--border);
+}
+
+.suggestion-item {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.suggestion-rank {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.suggestion-track,
+.planner-bar {
+  background: var(--surface-3);
+}
+
+.suggestion-track span,
+.planner-bar {
+  background-color: var(--accent-dim);
+}
+
+.planner-bar-selected .planner-bar,
+.planner-bar-recommended .planner-bar {
+  background: var(--accent);
+}
+
+.planner-bar-value,
+.planner-bar-label,
+.suggestion-value {
+  color: var(--text-secondary);
+}
+
+.planner-count {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.planner-empty-icon {
+  border: 1px solid var(--accent-line);
+}
+
+.daily-activity-item {
+  border-color: var(--border);
+}
+
+.daily-activity-time {
+  color: var(--accent);
+}
+
+.planner-remove-button {
+  color: #ff8585;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.planner-remove-button:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.planner-export-row {
+  border-color: var(--border);
+}
+
+.planner-summary {
+  color: var(--text);
+}
+
+.planner-footer {
+  border-color: var(--border);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .planner-stat,
+  .planner-card,
+  .planner-summary {
+    transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  }
+
+  .planner-stat:hover,
+  .planner-card:hover,
+  .planner-summary:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow);
+  }
+}
+
+@media (max-width: 600px) {
+  .planner-container {
+    width: min(100% - 28px, 1320px);
+    padding-top: 24px;
+  }
+
+  .planner-topbar {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .planner-hero h1 {
+    font-size: clamp(32px, 9vw, 44px);
+    letter-spacing: -1.5px;
+  }
+}
