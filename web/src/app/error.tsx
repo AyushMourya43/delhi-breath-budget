@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 export default function Error({
   error,
@@ -19,39 +20,67 @@ export default function Error({
         minHeight: "100vh",
         display: "grid",
         placeItems: "center",
-        padding: "24px",
-        background: "#f5f7fb",
-        color: "#172238",
-        fontFamily: "Arial, sans-serif",
+        padding: 24,
+        background: "var(--bg, #101312)",
+        color: "var(--text, #F2F4EF)",
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif",
       }}
     >
       <section
         style={{
-          maxWidth: "480px",
-          padding: "32px",
-          border: "1px solid #e5eaf2",
-          borderRadius: "16px",
-          background: "#ffffff",
+          maxWidth: 480,
+          padding: 32,
+          border: "1px solid rgba(239, 68, 68, 0.25)",
+          borderRadius: 16,
+          background: "var(--surface, #1B211E)",
+          textAlign: "center",
         }}
       >
-        <h2>Something went wrong</h2>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            margin: "0 auto 16px",
+            display: "grid",
+            placeItems: "center",
+            borderRadius: 12,
+            background: "rgba(239, 68, 68, 0.1)",
+            border: "1px solid rgba(239, 68, 68, 0.25)",
+            color: "#EF4444",
+          }}
+        >
+          <AlertCircle size={22} />
+        </div>
 
-        <p style={{ color: "#748096", lineHeight: 1.7 }}>
+        <h2 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 600 }}>
+          Something went wrong
+        </h2>
+
+        <p style={{ color: "#9BA59D", lineHeight: 1.7, fontSize: 13 }}>
           The dashboard encountered an unexpected error.
           Try loading the page again.
         </p>
 
         <button
+          type="button"
           onClick={() => reset()}
           style={{
+            marginTop: 18,
             padding: "11px 18px",
-            border: "none",
-            borderRadius: "8px",
-            background: "#0d9488",
-            color: "#ffffff",
+            border: "1px solid rgba(183, 243, 107, 0.35)",
+            borderRadius: 8,
+            background: "rgba(183, 243, 107, 0.12)",
+            color: "#B7F36B",
             cursor: "pointer",
+            fontWeight: 600,
+            fontSize: 13,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
           }}
         >
+          <RefreshCw size={14} />
           Try again
         </button>
       </section>
