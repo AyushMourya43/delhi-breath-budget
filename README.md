@@ -21,6 +21,7 @@ Delhi Breath Budget is a Delhi NCR air-quality planning prototype. It brings tog
 | Selected-route summary | Connects the selected route to the dashboard, including estimated PM2.5 and sampled-time coverage. |
 | Forecast planning | Uses CAMS PM2.5 model forecasts through Open-Meteo to identify comparatively lower-exposure windows. |
 | Profile guidance | Offers general guidance for adults, children, older adults, asthma-sensitive users, and outdoor workers. |
+| Plan My Day | Builds a daily schedule from activities and durations, compares illustrative sample PM2.5 across time slots, and exports the plan as an Excel workbook. This planner uses demonstration data, not live readings. |
 | Fire and wind context | Displays NASA FIRMS detections and wind data with experimental fire/wind screening. |
 | Telegram demo | Provides pollution summaries, forecast windows, profile commands, and opt-in alerts for one paired account. |
 
@@ -41,6 +42,8 @@ Delhi Breath Budget is a Delhi NCR air-quality planning prototype. It brings tog
 The website requests data from the FastAPI backend. The backend fetches environmental data and road routes from external providers, checks usable observations, and returns planning results with source and availability information. The Telegram process separately queries the backend and delivers replies to its paired account.
 
 The dashboard's highest-location index is not an official overall Delhi AQI. Average PM2.5 is calculated across the locations returned by the API, rather than every monitoring station in Delhi.
+
+The **Plan My Day** page is a separate demonstration planner: its sample PM2.5 values are not live measurements or a validated forecast. Its duration-weighted concentration comparison and illustrative concentration-duration index are not an estimate of inhaled dose or health risk.
 
 ## Repository structure
 
@@ -249,6 +252,7 @@ Inspect the Python runtime with:
 
 - Measurement coverage is limited to returned reporting locations and varies over time.
 - Route exposure is an experimental estimate, not a personal sensor measurement. Current routing uses driving routes.
+- Plan My Day uses illustrative sample readings; it does not calculate measured daily exposure or personal inhaled dose.
 - Forecasts are model outputs, and lower predicted pollution does not mean safe conditions.
 - Fire/wind screening does not establish that a detected fire caused pollution at a location.
 - Profile guidance is general; the activity selection does not currently provide a fully individualized risk model.
