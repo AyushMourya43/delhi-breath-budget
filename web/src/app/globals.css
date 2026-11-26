@@ -1887,6 +1887,9 @@ a:hover {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
 }
+.route-leaflet-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.42) contrast(1.2) saturate(0.7);
+}
 .route-selection-summary {
   display: flex; gap: 10px; align-items: center;
   margin: 12px 22px 0; padding: 14px;

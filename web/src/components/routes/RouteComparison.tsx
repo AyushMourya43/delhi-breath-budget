@@ -71,9 +71,9 @@ type RouteResponse = {
 
 // Lime accent for the recommended route, muted for alternates.
 const routeColors = ["#B7F36B", "#FACC15", "#9BA59D"];
-const DARK_TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-const DARK_TILE_ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+const TILE_URL = "https://tile.openstreetmap.de/{z}/{x}/{y}.png";
+const TILE_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · Tiles by <a href="https://openstreetmap.de/">OpenStreetMap.de</a>';
 
 async function geocodePlace(query: string): Promise<Place> {
   const params = new URLSearchParams({
@@ -596,9 +596,8 @@ export default function RouteComparison({
               >
                 <ZoomControl position="topright" />
                 <TileLayer
-                  attribution={DARK_TILE_ATTR}
-                  url={DARK_TILE_URL}
-                  subdomains="abcd"
+                  attribution={TILE_ATTR}
+                  url={TILE_URL}
                 />
 
                 {routes.map((route, index) => {
