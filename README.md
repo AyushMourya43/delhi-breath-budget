@@ -16,8 +16,8 @@ Delhi Breath Budget is a Delhi NCR air-quality planning prototype. It brings tog
 | Feature | What it does |
 | --- | --- |
 | Air-quality dashboard | Displays available hourly PM2.5 readings, a highest-location PM2.5 index, reporting-location count, and freshness information. |
-| Interactive pollution map | Shows available monitoring locations and pollution context across Delhi NCR. |
-| Route comparison | Retrieves driving routes and estimates exposure where sufficiently recent nearby measurements provide coverage. |
+| Interactive pollution map | Shows available monitoring locations and pollution context across Delhi NCR on a keyless OpenStreetMap.de basemap. |
+| Route comparison | Retrieves driving routes and estimates exposure where sufficiently recent nearby measurements provide coverage, with the same keyless basemap. |
 | Selected-route summary | Connects the selected route to the dashboard, including estimated PM2.5 and sampled-time coverage. |
 | Forecast planning | Uses CAMS PM2.5 model forecasts through Open-Meteo to identify comparatively lower-exposure windows. |
 | Profile guidance | Offers general guidance for adults, children, older adults, asthma-sensitive users, and outdoor workers. |
@@ -29,7 +29,7 @@ Delhi Breath Budget is a Delhi NCR air-quality planning prototype. It brings tog
 | Layer | Technologies |
 | --- | --- |
 | Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, Lucide icons |
-| Mapping | Leaflet and React Leaflet |
+| Mapping | Leaflet and React Leaflet; OpenStreetMap.de raster tiles with OpenStreetMap attribution |
 | Backend | Python, FastAPI, Pydantic, HTTPX, Uvicorn |
 | Data providers | OpenAQ, Open-Meteo / CAMS, NASA FIRMS |
 | Routing and place search | OSRM and OpenStreetMap Nominatim |
@@ -263,3 +263,5 @@ Planned improvements include broader data coverage, multi-user Telegram subscrip
 Never commit real API keys, bot tokens, local environment files, or Telegram state. Keep `.env.example` files limited to placeholders. Variables prefixed with `NEXT_PUBLIC_` are exposed to browsers and must not contain secrets.
 
 Data and mapping services include OpenAQ and its original reporting providers, Open-Meteo / CAMS, NASA FIRMS / LANCE / Earthdata, OpenStreetMap contributors, and OSRM. Retain applicable attribution and review provider terms before wider distribution.
+
+The dashboard and route-comparison maps use `https://tile.openstreetmap.de/{z}/{x}/{y}.png`; no map API key is required. The base tiles are visually darkened by the frontend to match the dashboard theme. Keep the visible OpenStreetMap and OpenStreetMap.de attribution, and follow the tile provider's current usage policy.
