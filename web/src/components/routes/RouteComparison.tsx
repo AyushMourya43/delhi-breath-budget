@@ -70,7 +70,7 @@ type RouteResponse = {
 };
 
 // Lime accent for the recommended route, muted for alternates.
-const routeColors = ["#B7F36B", "#FACC15", "#9BA59D"];
+const routeColors = ["#3E7C4F", "#C7D64F", "#8FA493"];
 const TILE_URL = "https://tile.openstreetmap.de/{z}/{x}/{y}.png";
 const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · Tiles by <a href="https://openstreetmap.de/">OpenStreetMap.de</a>';
@@ -624,7 +624,7 @@ export default function RouteComparison({
                         {isDemoData && (
                           <>
                             <br />
-                            <span style={{ color: "#B7F36B", fontSize: 10, fontWeight: 600 }}>
+                            <span style={{ color: "#3E7C4F", fontSize: 10, fontWeight: 600 }}>
                               ● DEMO route
                             </span>
                           </>
@@ -639,9 +639,9 @@ export default function RouteComparison({
                     center={[originPlace.lat, originPlace.lon]}
                     radius={8}
                     pathOptions={{
-                      color: "#101312",
+                      color: "#FFFFFF",
                       weight: 3,
-                      fillColor: "#B7F36B",
+                      fillColor: "#3E7C4F",
                       fillOpacity: 1,
                     }}
                   >
@@ -654,9 +654,9 @@ export default function RouteComparison({
                     center={[destinationPlace.lat, destinationPlace.lon]}
                     radius={8}
                     pathOptions={{
-                      color: "#101312",
+                      color: "#FFFFFF",
                       weight: 3,
-                      fillColor: "#EF4444",
+                      fillColor: "#D9534F",
                       fillOpacity: 1,
                     }}
                   >

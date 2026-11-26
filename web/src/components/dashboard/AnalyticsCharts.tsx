@@ -44,8 +44,8 @@ export function AnalyticsCharts({ isDemo = false }: AnalyticsChartsProps) {
   const weeklyData = weeklyComparisonDemo.map((w) => ({
     label: w.weekLabel,
     values: [
-      { name: "This week", value: w.thisWeek, color: "#B7F36B" },
-      { name: "Last week", value: w.lastWeek, color: "#6B7568" },
+      { name: "This week", value: w.thisWeek, color: "#3E7C4F" },
+      { name: "Last week", value: w.lastWeek, color: "#A8CBA0" },
     ],
   }));
 
@@ -83,7 +83,7 @@ export function AnalyticsCharts({ isDemo = false }: AnalyticsChartsProps) {
             points={hourlyPoints}
             ariaLabel="24-hour PM2.5 trend"
             isDemo={isDemo}
-            color="#B7F36B"
+            color="#3E7C4F"
           />
         )}
         {tab === "daily" && (
@@ -91,7 +91,7 @@ export function AnalyticsCharts({ isDemo = false }: AnalyticsChartsProps) {
             points={dailyPoints}
             ariaLabel="7-day daily PM2.5 trend"
             isDemo={isDemo}
-            color="#FACC15"
+            color="#4C8C5C"
           />
         )}
         {tab === "weekly" && (
@@ -106,7 +106,7 @@ export function AnalyticsCharts({ isDemo = false }: AnalyticsChartsProps) {
             points={forecastPoints}
             ariaLabel="24-hour PM2.5 forecast"
             isDemo={isDemo}
-            color="#84CC16"
+            color="#7FB069"
           />
         )}
       </div>

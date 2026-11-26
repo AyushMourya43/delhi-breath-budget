@@ -21,19 +21,18 @@ export default function Error({
         display: "grid",
         placeItems: "center",
         padding: 24,
-        background: "var(--bg, #101312)",
-        color: "var(--text, #F2F4EF)",
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif",
+        background: "var(--bg, #F5EFE3)",
+        color: "var(--text, #1A1A1A)",
+        fontFamily: '"Inter", -apple-system, "Segoe UI", system-ui, sans-serif',
       }}
     >
       <section
         style={{
           maxWidth: 480,
           padding: 32,
-          border: "1px solid rgba(239, 68, 68, 0.25)",
+          border: "1px solid rgba(217, 83, 79, 0.25)",
           borderRadius: 16,
-          background: "var(--surface, #1B211E)",
+          background: "var(--surface, #FFFFFF)",
           textAlign: "center",
         }}
       >
@@ -45,9 +44,9 @@ export default function Error({
             display: "grid",
             placeItems: "center",
             borderRadius: 12,
-            background: "rgba(239, 68, 68, 0.1)",
-            border: "1px solid rgba(239, 68, 68, 0.25)",
-            color: "#EF4444",
+            background: "rgba(217, 83, 79, 0.1)",
+            border: "1px solid rgba(217, 83, 79, 0.25)",
+            color: "#D9534F",
           }}
         >
           <AlertCircle size={22} />
@@ -57,7 +56,7 @@ export default function Error({
           Something went wrong
         </h2>
 
-        <p style={{ color: "#9BA59D", lineHeight: 1.7, fontSize: 13 }}>
+        <p style={{ color: "#6B7568", lineHeight: 1.7, fontSize: 13 }}>
           The dashboard encountered an unexpected error.
           Try loading the page again.
         </p>
@@ -68,10 +67,10 @@ export default function Error({
           style={{
             marginTop: 18,
             padding: "11px 18px",
-            border: "1px solid rgba(183, 243, 107, 0.35)",
+            border: "1px solid rgba(62, 124, 79, 0.3)",
             borderRadius: 8,
-            background: "rgba(183, 243, 107, 0.12)",
-            color: "#B7F36B",
+            background: "rgba(207, 227, 196, 0.58)",
+            color: "#2D4A35",
             cursor: "pointer",
             fontWeight: 600,
             fontSize: 13,

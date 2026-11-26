@@ -9,10 +9,9 @@ export default function NotFound() {
         display: "grid",
         placeItems: "center",
         padding: 24,
-        background: "var(--bg, #101312)",
-        color: "var(--text, #F2F4EF)",
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif",
+        background: "var(--bg, #F5EFE3)",
+        color: "var(--text, #1A1A1A)",
+        fontFamily: '"Inter", -apple-system, "Segoe UI", system-ui, sans-serif',
         textAlign: "center",
       }}
     >
@@ -25,9 +24,9 @@ export default function NotFound() {
             display: "grid",
             placeItems: "center",
             borderRadius: 14,
-            background: "rgba(183, 243, 107, 0.1)",
-            border: "1px solid rgba(183, 243, 107, 0.3)",
-            color: "#B7F36B",
+            background: "rgba(207, 227, 196, 0.58)",
+            border: "1px solid rgba(62, 124, 79, 0.3)",
+            color: "#3E7C4F",
           }}
         >
           <Compass size={28} />
@@ -35,7 +34,7 @@ export default function NotFound() {
         <h1 style={{ fontSize: 28, fontWeight: 600, margin: "0 0 6px" }}>
           404 — Page not found
         </h1>
-        <p style={{ color: "#9BA59D", fontSize: 13, lineHeight: 1.7 }}>
+        <p style={{ color: "#6B7568", fontSize: 13, lineHeight: 1.7 }}>
           That route {"isn't"} on the map. Head back to the dashboard.
         </p>
         <Link
@@ -47,8 +46,8 @@ export default function NotFound() {
             gap: 8,
             padding: "11px 18px",
             borderRadius: 8,
-            background: "#B7F36B",
-            color: "#101312",
+            background: "#3E7C4F",
+            color: "#FFFFFF",
             fontWeight: 600,
             fontSize: 13,
           }}

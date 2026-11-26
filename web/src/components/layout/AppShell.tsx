@@ -7,9 +7,9 @@ import {
   FlaskConical,
   Gauge,
   Home,
+  Leaf,
   Map as MapIcon,
   Menu,
-  Radio,
   Route as RouteIcon,
   Sparkles,
   Zap,
@@ -80,7 +80,7 @@ export default function AppShell({
       >
         <div className="dbb-sidebar-brand">
           <div className="dbb-sidebar-logo">
-            <Radio size={20} />
+            <Leaf size={20} />
           </div>
           <div className="dbb-sidebar-titles">
             <div className="dbb-sidebar-title">Delhi Breath Budget</div>

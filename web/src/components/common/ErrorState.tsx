@@ -21,10 +21,10 @@ export default function ErrorState({
       <div
         style={{
           padding: "12px 14px",
-          border: "1px solid rgba(239, 68, 68, 0.25)",
-          background: "rgba(239, 68, 68, 0.06)",
+          border: "1px solid rgba(217, 83, 79, 0.25)",
+          background: "rgba(217, 83, 79, 0.06)",
           borderRadius: 12,
-          color: "#EF4444",
+          color: "#D9534F",
           fontSize: 12,
           display: "flex",
           alignItems: "center",

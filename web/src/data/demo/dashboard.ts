@@ -47,12 +47,12 @@ export function aqiCategoryFor(aqi: number): AQICategory {
 }
 
 export function aqiColorFor(aqi: number): string {
-  if (aqi <= 50) return "#84CC16";
-  if (aqi <= 100) return "#B7F36B";
-  if (aqi <= 200) return "#FACC15";
-  if (aqi <= 300) return "#F97316";
-  if (aqi <= 400) return "#EF4444";
-  return "#991B1B";
+  if (aqi <= 50) return "#7FB069";
+  if (aqi <= 100) return "#C7D64F";
+  if (aqi <= 200) return "#E3D24B";
+  if (aqi <= 300) return "#E8913C";
+  if (aqi <= 400) return "#D9534F";
+  return "#8B3A3A";
 }
 
 export function degreesToCompass(deg: number): string {

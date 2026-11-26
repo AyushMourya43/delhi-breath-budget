@@ -37,12 +37,12 @@ const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · Tiles by <a href="https://openstreetmap.de/">OpenStreetMap.de</a>';
 
 function getAqiColor(aqi: number): string {
-  if (aqi <= 50) return "#84CC16";
-  if (aqi <= 100) return "#B7F36B";
-  if (aqi <= 200) return "#FACC15";
-  if (aqi <= 300) return "#F97316";
-  if (aqi <= 400) return "#EF4444";
-  return "#991B1B";
+  if (aqi <= 50) return "#7FB069";
+  if (aqi <= 100) return "#C7D64F";
+  if (aqi <= 200) return "#E3D24B";
+  if (aqi <= 300) return "#E8913C";
+  if (aqi <= 400) return "#D9534F";
+  return "#8B3A3A";
 }
 
 function createStationIcon(aqi: number, label: string) {
@@ -56,8 +56,8 @@ function createStationIcon(aqi: number, label: string) {
           min-width:38px;height:30px;padding:0 6px;
           border:2px solid rgba(255,255,255,0.85);
           border-radius:9px;background:${color};
-          color:#101312;font-size:12px;font-weight:700;line-height:1;
-          box-shadow:0 2px 12px rgba(0,0,0,0.6), 0 0 8px ${color}66;
+          color:#FFFFFF;font-size:12px;font-weight:700;line-height:1;
+          box-shadow:0 2px 8px rgba(30,59,42,0.24);
         ">${aqi}</div>
         <div style="
           width:8px;height:8px;
@@ -66,8 +66,8 @@ function createStationIcon(aqi: number, label: string) {
           box-shadow:0 0 6px ${color};
         "></div>
         <div style="
-          font-size:9px;font-weight:600;color:#F2F4EF;
-          text-shadow:0 1px 2px rgba(0,0,0,0.8);
+          font-size:9px;font-weight:600;color:#1A1A1A;
+          text-shadow:0 1px 3px rgba(255,255,255,0.95), 0 0 5px rgba(255,255,255,0.9);
           max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
         ">${label}</div>
       </div>
@@ -87,9 +87,9 @@ function createFireIcon() {
         width:30px;height:30px;
         border:2px solid rgba(255,255,255,0.85);
         border-radius:50%;
-        background:radial-gradient(circle, #EF4444, #991B1B);
+        background:radial-gradient(circle, #D9534F, #8B3A3A);
         color:white;font-size:14px;font-weight:700;
-        box-shadow:0 2px 12px rgba(220,38,38,0.55), 0 0 12px rgba(239,68,68,0.5);
+        box-shadow:0 2px 8px rgba(139,58,58,0.24);
       ">🔥</div>
     `,
     iconSize: [30, 30],
@@ -109,8 +109,8 @@ function createWindIcon(degrees: number) {
           aria-hidden="true"
           style="transform:rotate(${degrees}deg)"
         >
-          <path d="M16 26V6" fill="none" stroke="#B7F36B" stroke-width="3.5" stroke-linecap="round" />
-          <path d="M7.5 14.5L16 6L24.5 14.5" fill="none" stroke="#B7F36B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M16 26V6" fill="none" stroke="#3E7C4F" stroke-width="3.5" stroke-linecap="round" />
+          <path d="M7.5 14.5L16 6L24.5 14.5" fill="none" stroke="#3E7C4F" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </div>
     `,
@@ -144,11 +144,11 @@ function PollutionHeatLayer({
       max: 1,
       maxZoom: 12,
       gradient: {
-        0.15: "#84CC16",
-        0.35: "#B7F36B",
-        0.55: "#FACC15",
-        0.75: "#F97316",
-        1: "#EF4444",
+        0.15: "#3E7C4F",
+        0.35: "#7FB069",
+        0.55: "#E3D24B",
+        0.75: "#E8913C",
+        1: "#D9534F",
       },
     });
 
@@ -304,19 +304,19 @@ export default function PollutionMap() {
       <div className="dbb-layer-controls" aria-label="Map layers">
         <LayerToggle
           label="PM2.5 heatmap"
-          color="#F97316"
+          color="#E8913C"
           enabled={showHeatmap}
           onClick={() => setShowHeatmap((v) => !v)}
         />
         <LayerToggle
           label="Reporting locations"
-          color="#B7F36B"
+          color="#3E7C4F"
           enabled={showStations}
           onClick={() => setShowStations((v) => !v)}
         />
         <LayerToggle
           label="Fire detections"
-          color="#EF4444"
+          color="#D9534F"
           enabled={showFires}
           onClick={() => setShowFires((v) => !v)}
         />
@@ -391,7 +391,7 @@ export default function PollutionMap() {
                         <div
                           style={{
                             marginTop: 8,
-                            color: "#B7F36B",
+                            color: "#3E7C4F",
                             fontSize: 10,
                             fontWeight: 600,
                             letterSpacing: "0.04em",
@@ -429,7 +429,7 @@ export default function PollutionMap() {
                       <div
                         style={{
                           marginTop: 6,
-                          color: "#F97316",
+                          color: "#E8913C",
                           fontSize: 10,
                           fontWeight: 600,
                         }}
@@ -462,7 +462,7 @@ export default function PollutionMap() {
                       <div
                         style={{
                           marginTop: 6,
-                          color: "#B7F36B",
+                          color: "#3E7C4F",
                           fontSize: 10,
                           fontWeight: 600,
                         }}
@@ -489,12 +489,12 @@ export default function PollutionMap() {
             <div className="dbb-legend-title">PM2.5 index estimate</div>
             <div className="dbb-legend-scale">
               {[
-                "#84CC16",
-                "#B7F36B",
-                "#FACC15",
-                "#F97316",
-                "#EF4444",
-                "#991B1B",
+                "#7FB069",
+                "#C7D64F",
+                "#E3D24B",
+                "#E8913C",
+                "#D9534F",
+                "#8B3A3A",
               ].map((color) => (
                 <div
                   key={color}

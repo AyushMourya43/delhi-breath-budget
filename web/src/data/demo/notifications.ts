@@ -52,9 +52,9 @@ export const uiStateDemo = {
     body: "Up to 48 future hours. Model-run time is not provided by the source.",
   },
   mapLayerToggles: [
-    { id: "heatmap", label: "PM2.5 heatmap", color: "#F97316", enabled: true },
-    { id: "stations", label: "Reporting locations", color: "#B7F36B", enabled: true },
-    { id: "fires", label: "Fire detections", color: "#EF4444", enabled: true },
+    { id: "heatmap", label: "PM2.5 heatmap", color: "#E8913C", enabled: true },
+    { id: "stations", label: "Reporting locations", color: "#3E7C4F", enabled: true },
+    { id: "fires", label: "Fire detections", color: "#D9534F", enabled: true },
     { id: "wind", label: "Wind direction", color: "#9BA59D", enabled: true },
   ],
 };

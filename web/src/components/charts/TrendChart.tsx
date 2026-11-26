@@ -26,7 +26,7 @@ interface LineChartProps {
 export default function LineChart({
   points,
   height = 220,
-  color = "#B7F36B",
+  color = "#3E7C4F",
   unit = "µg/m³",
   decimals = 0,
   isDemo = false,

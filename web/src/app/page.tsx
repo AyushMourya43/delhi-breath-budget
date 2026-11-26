@@ -284,7 +284,7 @@ export default function HomePage() {
           }
           track={{
             fraction: currentPM === null ? 0 : Math.min(1, currentPM / 250),
-            color: "#F97316",
+            color: "#E8913C",
           }}
           demo={useDemoValues}
         />
@@ -303,7 +303,7 @@ export default function HomePage() {
                 : "Waiting for backend"}
             </span>
           }
-          track={{ fraction: stationsCount ? 1 : 0, color: "#B7F36B" }}
+          track={{ fraction: stationsCount ? 1 : 0, color: "#7FB069" }}
           demo={useDemoValues}
         />
 
@@ -325,7 +325,7 @@ export default function HomePage() {
           }
           track={{
             fraction: routeCoverage / 100,
-            color: "#84CC16",
+            color: "#7FB069",
           }}
         />
       </section>

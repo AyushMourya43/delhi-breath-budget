@@ -57,7 +57,7 @@ export default function AQIGauge({
     return () => window.clearTimeout(id);
   }, [aqi]);
 
-  const color = aqi === null ? "#384238" : aqiColorFor(aqi);
+  const color = aqi === null ? "#D5CFC0" : aqiColorFor(aqi);
   const category = aqi === null ? null : aqiCategoryFor(aqi);
 
   const R = 120;
