@@ -1494,6 +1494,9 @@ a:hover {
   background: var(--bg-secondary);
   font-family: var(--font-sans);
 }
+.dbb-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.42) contrast(1.2) saturate(0.7);
+}
 .dbb-map .leaflet-control-attribution {
   background: rgba(22, 27, 24, 0.85);
   color: var(--text-dim);

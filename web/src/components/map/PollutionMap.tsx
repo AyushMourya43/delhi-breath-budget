@@ -29,10 +29,12 @@ import {
 
 const REFRESH_MS = 5 * 60 * 1000;
 
-// Dark map tiles (CARTO dark matter) — premium dark appearance.
-const DARK_TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-const DARK_TILE_ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+// Use a keyless raster basemap. CARTO's current endpoint displays an
+// API-key-required watermark, while OSM France HOT tiles are blocked in some
+// browsers by cross-origin response filtering.
+const TILE_URL = "https://tile.openstreetmap.de/{z}/{x}/{y}.png";
+const TILE_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · Tiles by <a href="https://openstreetmap.de/">OpenStreetMap.de</a>';
 
 function getAqiColor(aqi: number): string {
   if (aqi <= 50) return "#84CC16";
@@ -338,10 +340,9 @@ export default function PollutionMap() {
           preferCanvas
         >
           <TileLayer
-            attribution={DARK_TILE_ATTR}
-            url={DARK_TILE_URL}
+            attribution={TILE_ATTR}
+            url={TILE_URL}
             maxZoom={20}
-            subdomains="abcd"
           />
 
           <PollutionHeatLayer enabled={showHeatmap} points={heatPoints} />
