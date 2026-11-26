@@ -1,16 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+import { DemoModeProvider } from "../lib/demo-mode";
+
 export const metadata: Metadata = {
   title: "Delhi Breath Budget",
   description:
-    "Explore Delhi air quality, compare routes, and plan outdoor activities.",
+    "Premium air-quality intelligence for Delhi NCR. Understand your exposure, choose your route, plan your day.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#14213d",
+  themeColor: "#101312",
 };
 
 export default function RootLayout({
@@ -20,7 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <DemoModeProvider>{children}</DemoModeProvider>
+      </body>
     </html>
   );
 }
